@@ -1,0 +1,6 @@
+{
+  "name": "Wentix AI",
+  "description": "Ecosistema definitivo de inteligencia artificial en español: descubre y automatiza con herramientas IA, repositorios trending, prompts optimizados y asistente inteligente.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

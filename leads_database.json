@@ -1,0 +1,61 @@
+{
+  "visitorsCount": 9482,
+  "leads": [
+    {
+      "email": "manu.emprendehoy@gmail.com",
+      "createdAt": "2026-05-30T10:14:00.000Z"
+    },
+    {
+      "email": "carla.ia.marketing@gmail.com",
+      "createdAt": "2026-05-30T09:23:12.000Z"
+    },
+    {
+      "email": "javier.growth.hacks@outlook.com",
+      "createdAt": "2026-05-30T04:10:45.000Z"
+    },
+    {
+      "email": "roberto.dev.ai@gmail.com",
+      "createdAt": "2026-05-29T18:42:00.000Z"
+    },
+    {
+      "email": "sofia.creativa@hotmail.com",
+      "createdAt": "2026-05-29T11:05:30.000Z"
+    },
+    {
+      "email": "andres.rojas@wentix.co",
+      "createdAt": "2026-05-28T14:30:15.000Z"
+    },
+    {
+      "email": "laura.beltran.viral@gmail.com",
+      "createdAt": "2026-05-27T08:15:00.000Z"
+    },
+    {
+      "email": "growth.master.ia@proworkflow.net",
+      "createdAt": "2026-05-26T22:11:40.000Z"
+    },
+    {
+      "email": "diego.ecom.ia@gmail.com",
+      "createdAt": "2026-05-25T15:33:12.000Z"
+    },
+    {
+      "email": "monica.flores.automatizadora@outlook.com",
+      "createdAt": "2026-05-24T09:02:18.000Z"
+    }
+  ],
+  "donations": [
+    {
+      "id": "1",
+      "name": "Alejandro M.",
+      "amount": 50,
+      "message": "Soporte total a Wentix AI. ¡Mucha fuerza!",
+      "date": "2026-05-29"
+    },
+    {
+      "id": "2",
+      "name": "Lucía Fernández",
+      "amount": 25,
+      "message": "Los prompts de Claude me han ahorrado días enteros. Gracias Manu.",
+      "date": "2026-05-27"
+    }
+  ]
+}
