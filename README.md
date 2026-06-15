@@ -4,61 +4,81 @@ AI-powered community platform for learning, building, and connecting.
 
 ---
 
-## 🚀 VPS Deploy Guide
+## 🏗️ Architecture
 
-### Prerequisites (on your VPS)
+- **Frontend:** React 19 + Vite + Tailwind CSS
+- **Backend:** Express + Vite SSR
+- **AI:** Ollama (local LLM) — runs on the same VPS
+- **Database:** JSON file (`leads_database.json`)
+- **Process Manager:** PM2
+- **Reverse Proxy:** Nginx + SSL (Let's Encrypt)
+
+---
+
+## 🚀 VPS Deploy (One-time Setup)
+
+SSH into your VPS and run:
 
 ```bash
-# 1. Update system
-sudo apt update && sudo apt upgrade -y
+curl -fsSL https://raw.githubusercontent.com/Manuemprende/Wentix-AI-Community/main/setup-vps.sh | bash
+```
 
-# 2. Install Node.js 22
+Or manually:
+
+```bash
+# 1. Update & install dependencies
+sudo apt update && sudo apt install -y curl wget git nginx certbot python3-certbot-nginx
+
+# 2. Node.js 22
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# 3. Install PM2 (process manager)
+# 3. PM2
 sudo npm install -g pm2
 
-# 4. Install nginx (reverse proxy + SSL)
-sudo apt install -y nginx
+# 4. Ollama (local LLM)
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3.2
 
-# 5. Install certbot (free SSL)
-sudo apt install -y certbot python3-certbot-nginx
-```
-
-### Clone & Setup on VPS
-
-```bash
-# Clone repo
+# 5. Clone & build
 git clone https://github.com/Manuemprende/Wentix-AI-Community.git /var/www/wentix-ai
 cd /var/www/wentix-ai
+npm install && npm run build
 
-# Install deps and build
-npm install
-npm run build
-
-# Create .env
+# 6. Create .env
 cp .env.example .env
-nano .env   # Set GEMINI_API_KEY and APP_URL
+# Edit: OLLAMA_MODEL=llama3.2, APP_URL=https://wentixai.sbs
 
-# Start with PM2
+# 7. Start with PM2
 pm2 start ecosystem.config.js
 pm2 save
 pm2 startup
+
+# 8. Nginx + SSL
+sudo cp nginx.conf /etc/nginx/sites-available/wentix-ai
+sudo ln -s /etc/nginx/sites-available/wentix-ai /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d wentixai.sbs
 ```
 
-### SSL with Certbot
+---
+
+## 🔄 Fast Update (After Git Push)
+
+Every time you push updates to GitHub, run this **on the VPS**:
 
 ```bash
-sudo certbot --nginx -d wentix.ai -d www.wentix.ai
+cd /var/www/wentix-ai && ./deploy.sh
 ```
 
-### Deploy Script (from local)
-
-Edit `deploy.sh` with your VPS IP, then run:
+Or manually:
 
 ```bash
-./deploy.sh production
+cd /var/www/wentix-ai
+git pull origin main
+npm install
+npm run build
+pm2 reload ecosystem.config.js
 ```
 
 ---
@@ -73,9 +93,13 @@ docker-compose up -d --build
 
 ## 📦 Run Locally
 
-**Prerequisites:** Node.js 22+
+**Prerequisites:** Node.js 22+, Ollama running locally
 
 ```bash
+# Start Ollama first
+ollama serve
+
+# In another terminal
 npm install
 npm run dev
 ```
@@ -84,20 +108,24 @@ npm run dev
 
 ## 🔧 Environment Variables
 
-| Variable | Description | Required |
+| Variable | Description | Default |
 |---|---|---|
-| `GEMINI_API_KEY` | Google Gemini API key | Yes |
-| `APP_URL` | Public URL of the app | Yes |
-| `PORT` | Server port (default: 3000) | No |
+| `OLLAMA_BASE_URL` | Ollama API endpoint | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Model name to use | `llama3.2` |
+| `APP_URL` | Public URL of the app | `https://wentixai.sbs` |
+| `PORT` | Server port | `3000` |
 
 ---
 
-## 🏗️ Architecture
+## 📝 Useful Commands
 
-- **Frontend:** React 19 + Vite + Tailwind CSS
-- **Backend:** Express + Google GenAI (Gemini)
-- **SSR:** Vite SSR via custom Express server
-- **Database:** JSON file (`leads_database.json`)
-- **Process Manager:** PM2
-- **Reverse Proxy:** Nginx
+| Command | Description |
+|---|---|
+| `pm2 status` | Check app status |
+| `pm2 logs wentix-ai-community` | View logs |
+| `pm2 reload ecosystem.config.js` | Reload app |
+| `ollama list` | List installed models |
+| `ollama pull llama3.2` | Update model |
+| `sudo nginx -t` | Test nginx config |
+| `sudo certbot renew --dry-run` | Test SSL renewal |
 

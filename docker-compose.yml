@@ -11,7 +11,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
       - APP_URL=${APP_URL:-https://wentix.ai}
     volumes:
       - ./leads_database.json:/app/leads_database.json

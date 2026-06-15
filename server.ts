@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 
 const DATABASE_PATH = path.join(process.cwd(), "leads_database.json");
 
@@ -164,25 +163,58 @@ async function startServer() {
     });
   });
 
-  // Initialize Gemini Client safely
-  let ai: GoogleGenAI | null = null;
-  const getGeminiClient = () => {
-    if (!ai) {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        console.warn("WARNING: GEMINI_API_KEY environment variable is not set. Real AI responses will fall back to simulation.");
-      }
-      ai = new GoogleGenAI({
-        apiKey: apiKey || "MOCK_KEY",
-        httpOptions: {
-          headers: {
-            'User-Agent': 'wentix-community/1.0',
-          }
-        }
-      });
+  // Ollama configuration (local LLM on VPS)
+  const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+  const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2";
+
+  async function ollamaChat(systemInstruction: string, userPrompt: string, temperature = 0.75): Promise<string> {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: "system", content: systemInstruction },
+          { role: "user", content: userPrompt }
+        ],
+        stream: false,
+        options: { temperature }
+      })
+    });
+    if (!response.ok) {
+      throw new Error(`Ollama chat failed: ${response.status} ${response.statusText}`);
     }
-    return ai;
-  };
+    const data = await response.json() as any;
+    return data.message?.content || "";
+  }
+
+  async function ollamaGenerate(systemInstruction: string, prompt: string, temperature = 0.6): Promise<string> {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        system: systemInstruction,
+        prompt: prompt,
+        stream: false,
+        options: { temperature }
+      })
+    });
+    if (!response.ok) {
+      throw new Error(`Ollama generate failed: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json() as any;
+    return data.response || "";
+  }
+
+  async function ollamaAvailable(): Promise<boolean> {
+    try {
+      const res = await fetch(`${OLLAMA_BASE_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
 
   // 1. API: Chat with ORBI
   app.post("/api/gemini/orbi-chat", async (req, res) => {
@@ -192,8 +224,7 @@ async function startServer() {
     }
 
     try {
-      const client = getGeminiClient();
-      const apiKeyExists = !!process.env.GEMINI_API_KEY;
+      const ollamaUp = await ollamaAvailable();
 
       const systemInstruction = `Eres ORBI, el asistente oficial de Wentix AI.
 
@@ -290,30 +321,23 @@ Toda conversación debe terminar acercando al usuario a una solución de Wentix 
 
       const prompt = `Contexto del ecosistema actual: ${JSON.stringify(userContext || {})}\n\nPregunta o mensaje del usuario:\n${messages[messages.length - 1]?.content}`;
 
-      if (!apiKeyExists) {
-        // Fallback simulation to keep the app working gracefully without crashing
+      if (!ollamaUp) {
+        // Fallback simulation when Ollama is not running
         setTimeout(() => {
           res.json({
-            text: `✨ **Hola, soy ORBI!** (Modo simulación activado - Sin clave de API) \n\n¡Estoy encantado de ayudarte en **Wentix AI**! Parece que estás explorando nuestro ecosistema definitivo de inteligencia artificial. Aquí puedes:\n\n* 🚀 Descubrir **Herramientas de IA** ordenadas por valoración y categoría.\n* 🧑‍💻 Explorar **Repositorios GitHub** trending en español.\n* 🔄 Configurar **Workflows de automatización** para TikTok, Instagram, WhatsApp y captación de leads.\n* 💡 Copiar prompts profesionales optimizados para ChatGPT, Claude o Midjourney.\n\n¿Qué te gustaría automatizar hoy, o qué tipo de recurso necesitas? ¡Dime y te daré un plan práctico!`
+            text: `✨ **Hola, soy ORBI!** (Modo simulación activado - Ollama no disponible) \n\n¡Estoy encantado de ayudarte en **Wentix AI**! Parece que estás explorando nuestro ecosistema definitivo de inteligencia artificial. Aquí puedes:\n\n* 🚀 Descubrir **Herramientas de IA** ordenadas por valoración y categoría.\n* 🧑‍💻 Explorar **Repositorios GitHub** trending en español.\n* 🔄 Configurar **Workflows de automatización** para TikTok, Instagram, WhatsApp y captación de leads.\n* 💡 Copiar prompts profesionales optimizados para ChatGPT, Claude o Midjourney.\n\n¿Qué te gustaría automatizar hoy, o qué tipo de recurso necesitas? ¡Dime y te daré un plan práctico!`
           });
         }, 1200);
         return;
       }
 
-      const response = await client.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt,
-        config: {
-          systemInstruction,
-          temperature: 0.75,
-        }
-      });
+      const responseText = await ollamaChat(systemInstruction, prompt, 0.75);
 
-      res.json({ text: response.text });
+      res.json({ text: responseText });
     } catch (error: any) {
-      console.error("Error calling Gemini API for ORBI:", error);
+      console.error("Error calling Ollama API for ORBI:", error);
       res.status(500).json({ 
-        error: "Failed to generate response from Gemini AI",
+        error: "Failed to generate response from Ollama AI",
         details: error.message || error 
       });
     }
@@ -327,8 +351,7 @@ Toda conversación debe terminar acercando al usuario a una solución de Wentix 
     }
 
     try {
-      const client = getGeminiClient();
-      const apiKeyExists = !!process.env.GEMINI_API_KEY;
+      const ollamaUp = await ollamaAvailable();
 
       // Real fetch scraper in sandbox/backend!
       let scrapedContent = "";
@@ -401,7 +424,7 @@ Debes responder ÚNICAMENTE con un objeto JSON válido con los siguientes campos
 
 Responde solo el JSON literal sin bloques markdown \`\`\`json ni caracteres adicionales para que sea parseable directamente.`;
 
-      if (!apiKeyExists) {
+      if (!ollamaUp) {
         // Fallback simulated JSON but with correct metadata dynamically
         setTimeout(() => {
           let sampleHost = "source";
@@ -421,7 +444,7 @@ Responde solo el JSON literal sin bloques markdown \`\`\`json ni caracteres adic
             highlights: [
               "Procesamiento ultra-rápido en la nube",
               "Integración nativa con n8n, Slack y bases de datos",
-              "Soporte completo para modelos Gemini, Claude y OpenAI"
+              "Soporte completo para modelos LLM locales, Claude y OpenAI"
             ],
             viralHacks: "Crea carruseles explicando cómo conectar esta herramienta con automatizaciones y compártelo en TikTok/Instagram para captar leads en automático."
           };
@@ -430,16 +453,7 @@ Responde solo el JSON literal sin bloques markdown \`\`\`json ni caracteres adic
         return;
       }
 
-      const response = await client.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: promptTemplate,
-        config: {
-          systemInstruction,
-          temperature: 0.6,
-        }
-      });
-
-      const responseText = response.text || "";
+      const responseText = await ollamaGenerate(systemInstruction, promptTemplate, 0.6);
       let jsonOutput;
       try {
         // Safe cleaning in case LLM outputs markdown fences
@@ -460,10 +474,10 @@ Responde solo el JSON literal sin bloques markdown \`\`\`json ni caracteres adic
         };
       }
 
-      res.json({ success: true, processedItem: jsonOutput, source: fetchSuccess ? "Scraper Real + Google Gemini 3.5-Flash" : "Google Gemini 3.5-Flash (Metadata Inteligente)" });
+      res.json({ success: true, processedItem: jsonOutput, source: fetchSuccess ? "Scraper Real + Ollama (Local)" : "Ollama Local (Metadata Inteligente)" });
     } catch (err: any) {
-      console.error("Error processing web scraping URL with Gemini:", err);
-      res.status(500).json({ error: "Failed to scrape and curate URL with Gemini AI", details: err.message });
+      console.error("Error processing web scraping URL with Ollama:", err);
+      res.status(500).json({ error: "Failed to scrape and curate URL with Ollama AI", details: err.message });
     }
   });
 
