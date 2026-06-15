@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  wentix:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wentix-ai-community
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - APP_URL=${APP_URL:-https://wentix.ai}
+    volumes:
+      - ./leads_database.json:/app/leads_database.json
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Uncomment for nginx reverse proxy if needed
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf
+  #     - ./ssl:/etc/nginx/ssl
+  #   depends_on:
+  #     - wentix
+  #   restart: unless-stopped

@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.env
+.env.local
+*.md
+deploy.sh
+ecosystem.config.js
+nginx.conf
+docker-compose.yml
+Dockerfile

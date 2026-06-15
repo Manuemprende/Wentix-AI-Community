@@ -176,7 +176,7 @@ async function startServer() {
         apiKey: apiKey || "MOCK_KEY",
         httpOptions: {
           headers: {
-            'User-Agent': 'aistudio-build',
+            'User-Agent': 'wentix-community/1.0',
           }
         }
       });

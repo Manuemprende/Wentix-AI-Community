@@ -1,8 +1,9 @@
 {
-  "name": "react-example",
+  "name": "wentix-ai-community",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Wentix AI Community - AI-powered platform for learning, building, and connecting.",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
