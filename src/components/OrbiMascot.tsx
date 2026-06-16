@@ -11,7 +11,7 @@ export default function OrbiMascot({ userContext }: OrbiMascotProps) {
   const [messages, setMessages] = useState<{ role: "orbi" | "user"; content: string }[]>([
     {
       role: "orbi",
-      content: "¡Hola! Soy **ORBI**, tu asistente holográfico flotante en Wentix AI. 🌌\n\n¿Quieres saber cuál es el stack gratuito óptimo para tu negocio, optimizar algún prompt o ver cómo crear automatizaciones en minutos? Dime qué te trae por aquí."
+      content: "¡Hola! Soy **ORBI**, tu asistente estratégico en Wentix AI. 🚀\n\n¿Cómo quieres automatizar algo? Cuéntame qué necesitas y Manu te puede ayudar a escalar tu negocio con IA."
     }
   ]);
   const [input, setInput] = useState("");
