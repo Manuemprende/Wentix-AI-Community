@@ -32,6 +32,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { PromptItem } from "../types";
+import { SKILLS_CATEGORIES, SKILLS_PACKS, PLAN_DAYS, SKILLS_FAQS } from "../skills_data";
 
 interface AIZeroToProProps {
   onShowToast: (message: string) => void;
@@ -68,6 +69,19 @@ export default function AIZeroToPro({
   const [promptSearch, setPromptSearch] = useState("");
   const [selectedModel, setSelectedModel] = useState("Todos");
   const [selectedDifficulty, setSelectedDifficulty] = useState("Todos");
+
+  // 40 Skills de Wentix state
+  const [skillsSearch, setSkillsSearch] = useState("");
+  const [activeSkillCategory, setActiveSkillCategory] = useState("todos");
+  const [expandedSkillId, setExpandedSkillId] = useState<string | null>(null);
+  const [activeInstallerTab, setActiveInstallerTab] = useState<"web" | "cli" | "git">("web");
+
+  // Stack IA + Automatización state
+  const [stackDomain, setStackDomain] = useState("wentix-stack.com");
+  const [stackOllamaGPU, setStackOllamaGPU] = useState(false);
+  const [activeStackTab, setActiveStackTab] = useState<"overview" | "compose" | "calculator" | "guide">("overview");
+  const [calcSeats, setCalcSeats] = useState(5);
+  const [calcZapierTasks, setCalcZapierTasks] = useState(5000);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -235,15 +249,37 @@ export default function AIZeroToPro({
       tags: ["Contexto", "Errores", "Pilares"]
     },
     {
-      id: "openwa-whatsapp",
-      title: "OpenWA: tu propia API de WhatsApp, gratis y para siempre",
-      subtitle: "API de WhatsApp gratis, open source y auto-hospedada",
-      lead: "OpenWA es una API de WhatsApp gratuita, open source y auto-hospedada: la instalas en tu propio servidor con Docker, le mandas mensajes por REST API y tus chats se quedan contigo, sin cargos mensuales.",
+      id: "claude-code-setup",
+      title: "Claude Code Setup: el plugin que escanea tu proyecto y te dice qué le falta",
+      subtitle: "Escanea tu proyecto y automatiza hooks, skills y MCPs",
+      lead: "Claude Code Setup es un plugin oficial read-only de Anthropic que analiza tu codebase y te recomienda las mejores automatizaciones para potenciar tu espacio de trabajo.",
       level: "principiante",
       duration: "15 min",
       lessonNum: "15",
-      type: "WhatsApp API",
-      tags: ["WhatsApp", "Docker", "Self-Hosted"]
+      type: "Claude Code",
+      tags: ["Claude Code", "Plugins", "Anthropic"]
+    },
+    {
+      id: "claude-chat-cowork-code",
+      title: "Claude Chat, Cowork y Code: los 3 modos en una sola app",
+      subtitle: "Usa Chat, Cowork y Code para pensar, delegar y construir",
+      lead: "Descarga Claude una vez y obtén tres modos de funcionamiento distintos: Chat para pensar con Projects, Cowork agéntico para delegar y Claude Code para construir.",
+      level: "principiante",
+      duration: "20 min",
+      lessonNum: "16",
+      type: "Claude",
+      tags: ["Claude Chat", "Cowork", "Claude Code"]
+    },
+    {
+      id: "skills-wentix-40",
+      title: "40 Skills de Wentix AI",
+      subtitle: "Copia, pega y úsalas hoy mismo para automatizar tu semana",
+      lead: "Una skill es un archivo SKILL.md que dejas en una carpeta. Claude lo lee y sabe hacer ese trabajo para siempre. 40 habilidades listas para copiar de escritura, research, código, comms, datos y productividad.",
+      level: "principiante",
+      duration: "25 min",
+      lessonNum: "17",
+      type: "Biblioteca",
+      tags: ["Skills", "Claude Code", "Productividad"]
     }
   ];
 
@@ -1056,7 +1092,84 @@ Cuando trabajemos, asumí este contexto sin que te lo repita. Si una conversaci�
 
 Antes de que arranques, hacéme las 5 preguntas más importantes que necesitarías que conteste para que tu respuesta no salga genérica. No me preguntes lo obvio — preguntá lo que realmente cambia el output según mi respuesta.
 
-Numerá las preguntas del 1 al 5. Esperá a que conteste las 5 antes de mandar tu trabajo final.`
+Numerá las preguntas del 1 al 5. Esperá a que conteste las 5 antes de mandar tu trabajo final.`,
+
+    claudeCodeRecomendaciones: `Recomiéndame automatizaciones para este proyecto.`,
+
+    claudeCodeNarrativo: `Ayúdame a configurar Claude Code para este proyecto.
+
+Antes de tirarme las recomendaciones, haz esto:
+1. Lista los archivos clave que miras para entender el stack (package.json, requirements.txt, go.mod, lo que aplique).
+2. Dime en 1-2 líneas qué tipo de proyecto detectas (web, mobile, CLI, data science, etc.) y qué framework principal usa.
+3. Después dame la tabla con tus recomendaciones top 1-2 por categoría (Hooks, Skills, MCP servers, Subagents, Slash commands).
+4. En cada recomendación, explícame en 1 línea por qué me sirve a mí, no en general.
+
+Si una categoría no te parece relevante para este proyecto, sáltala y dime por qué.`,
+
+    claudeCodeFocalizado: `¿Qué hooks debería usar en este proyecto?
+
+Mira mi stack y mis dependencias, y dame los top 3 hooks que más impacto me darían. Para cada uno:
+- Qué hace el hook (en 1 línea simple).
+- Por qué me sirve a mí específicamente (no en general).
+- El comando exacto para instalarlo o el snippet de configuración que tengo que pegar.
+
+Si crees que necesito un hook que aún no existe como plugin oficial, márcamelo como 'custom' y pásame el código listo para que lo guarde dentro de .claude/hooks/.`,
+
+    claudeCodeExtendido: `Activa la skill claude-automation-recommender y haz un análisis completo de este proyecto.
+
+Formato de salida:
+
+1. RESUMEN DEL PROYECTO (3-5 líneas)
+   - Tipo de proyecto y framework principal.
+   - Stack tecnológico detectado.
+   - Tamaño aproximado (archivos, líneas de código, dependencias).
+
+2. RECOMENDACIONES (top 1-2 por cada categoría)
+   Para CADA recomendación incluye:
+   - Nombre de la automatización.
+   - Qué hace en 1 línea.
+   - Por qué me sirve a mí específicamente, referenciando algo real de mi código (no el genérico).
+   - Comando exacto, path o snippet que tengo que aplicar.
+   - Si requiere setup adicional (API keys, cuenta de pago, permisos), avísame antes de que lo intente.
+
+3. SI ALGUNA CATEGORÍA NO APLICA
+   Márcala como 'no aplica' y dime en 1 línea por qué.
+
+4. ORDEN SUGERIDO
+   Si fueras yo, ¿en qué orden las aplicarías? La más impactante primero.
+
+Importante: no apliques ninguna recomendación, solo recomienda. Yo decido cuáles aplicar después.`,
+
+    claudeCustomInstructions: `Vamos a armar juntos las Custom Instructions para un Claude Project nuevo que va a funcionar como mi miniagente especializado.
+
+Tu rol: hacerme una INTERROGACIÓN profunda — preguntas específicas que te lleven a entender al 100% qué quiero del agente, antes de escribir una sola línea de instrucciones.
+
+Reglas estrictas de la interrogación:
+- Hacé las preguntas DE A UNA. No me tires todas juntas.
+- Esperá mi respuesta entre cada pregunta.
+- Sondéame con seguimientos cuando algo quede vago o ambiguo.
+- No avances al siguiente tema hasta que el actual esté cubierto al 100%.
+- Si te respondo algo contradictorio con lo anterior, mostrámelo y pedíme que aclare.
+
+Temas que necesito que cubras (en este orden, una pregunta por tema y los seguimientos que hagan falta):
+1. Qué hace mi marca o proyecto.
+2. Quién es mi audiencia (demografía, dolor que tienen, lenguaje que usan).
+3. El tono y voz que quiero que el agente use (formal, latino directo, técnico, juvenil, etc.).
+4. Las 5 cosas que SÍ debe hacer el agente.
+5. Las 3 cosas que NO debe hacer NUNCA.
+6. Formato de salida preferido (listas, prosa, bullets, respuestas cortas, etc.).
+7. Idioma y regionalismo (español Latam neutro, voseo argentino, mexicano, etc.).
+8. Casos de uso típicos (qué le voy a preguntar más seguido).
+9. Ejemplos de respuestas buenas vs respuestas malas (si los tengo).
+
+Cuando termines TODAS las preguntas, ARMÁ el bloque final de Custom Instructions listo para pegar en el campo del Project. Reglas del bloque final:
+- Máximo 600 palabras.
+- Segunda persona dirigida a Claude.
+- Sin meta-comentarios ni encabezados explicativos.
+- Tan específico que el agente pueda seguirlo AL PIE DE LA LETRA sin tener que interpretar nada.
+- Solo el contenido que va al campo, ordenado por: rol → reglas duras → tono → formato → casos típicos.
+
+Empezá con la primera pregunta.`
   };
 
   const handleSelectLevel = (level: "principiante" | "intermedio" | "avanzado" | "prompts") => {
@@ -8274,383 +8387,499 @@ Quiero: Mix balanceado.</pre>
               </div>
             )}
 
-            {selectedGuideId === "openwa-whatsapp" && (
+            {selectedGuideId === "claude-code-setup" && (
               <div className="space-y-12 text-left animate-fade-in text-neutral-200">
                 {/* HERO OVERVIEW */}
                 <div className="space-y-4">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-950/20 border border-amber-800/30 text-amber-400 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-950/20 border border-cyan-800/30 text-cyan-400 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-500 animate-pulse" />
                     <span>Lección 15 de Wentix • Nivel Principiante</span>
                   </div>
                   <h1 className="text-2xl md:text-3.5xl font-extrabold text-white tracking-tight leading-none font-display uppercase font-mono">
-                    OpenWA: <span className="text-amber-400 italic font-sans normal-case font-normal">tu propia API de WhatsApp, gratis y para siempre</span>
+                    Claude Code Setup: <span className="text-cyan-400 italic font-sans normal-case font-normal">el plugin que escanea tu proyecto y te dice qué le falta</span>
                   </h1>
-                  <p className="text-sm md:text-base text-neutral-300 leading-relaxed max-w-3xl font-sans">
-                    OpenWA es una API de WhatsApp <strong className="text-white">gratuita, open source y auto-hospedada</strong>. La instalas en tu propio servidor (VPS o local), le mandas mensajes por API REST y todo se queda bajo tu control, sin depender de intermediarios de pago ni incurrir en suscripciones mensuales.
+                  <p className="text-sm md:text-base text-neutral-300 leading-relaxed max-w-3xl font-sans font-sans">
+                    Abres un proyecto nuevo en Claude Code y no sabes por dónde empezar a configurarlo. Anthropic publicó un plugin oficial que resuelve exactamente eso: <strong className="text-white">escanea tu codebase y te recomienda las top 1-2 automatizaciones de cada categoría</strong> — Hooks, Skills, MCP servers, Subagents y Slash commands. Es 100% read-only, no toca tus archivos, y tú decides qué aplicar.
                   </p>
                 </div>
 
                 {/* QUICK GLANCE CELLS */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5">
                   <button 
-                    onClick={() => document.getElementById("openwa-sec-01")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                    className="p-4 bg-neutral-900/40 hover:bg-amber-950/20 text-left space-y-2 transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-95 border-b-2 border-transparent hover:border-amber-500/40 w-full focus:outline-none"
+                    onClick={() => document.getElementById("cc-sec-00")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    className="p-4 bg-neutral-900/40 hover:bg-cyan-950/20 text-left space-y-2 transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-95 border-b-2 border-transparent hover:border-cyan-500/40 w-full focus:outline-none"
                   >
-                    <span className="font-mono text-amber-400 text-[10px] font-bold block group-hover:translate-x-0.5 transition-transform">01 &rarr;</span>
-                    <span className="text-[10.5px] text-neutral-300 font-sans block leading-tight group-hover:text-amber-200 transition-colors font-semibold">Qué es y por qué importa</span>
+                    <span className="font-mono text-cyan-400 text-[10px] font-bold block group-hover:translate-x-0.5 transition-transform">01 &rarr;</span>
+                    <span className="text-[10.5px] text-neutral-300 font-sans block leading-tight group-hover:text-cyan-200 transition-colors font-semibold">Qué es y por qué importa</span>
                   </button>
 
                   <button 
-                    onClick={() => document.getElementById("openwa-sec-02")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                    className="p-4 bg-neutral-900/40 hover:bg-amber-950/20 text-left space-y-2 transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-95 border-b-2 border-transparent hover:border-amber-500/40 w-full focus:outline-none"
+                    onClick={() => document.getElementById("cc-sec-01")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    className="p-4 bg-neutral-900/40 hover:bg-cyan-950/20 text-left space-y-2 transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-95 border-b-2 border-transparent hover:border-cyan-500/40 w-full focus:outline-none"
                   >
-                    <span className="font-mono text-amber-400 text-[10px] font-bold block group-hover:translate-x-0.5 transition-transform">02 &rarr;</span>
-                    <span className="text-[10.5px] text-neutral-300 font-sans block leading-tight group-hover:text-amber-200 transition-colors font-semibold">Características y Stack</span>
+                    <span className="font-mono text-cyan-400 text-[10px] font-bold block group-hover:translate-x-0.5 transition-transform">02 &rarr;</span>
+                    <span className="text-[10.5px] text-neutral-300 font-sans block leading-tight group-hover:text-cyan-200 transition-colors font-semibold">Cómo Instalar Claude Code</span>
                   </button>
 
                   <button 
-                    onClick={() => document.getElementById("openwa-sec-03")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                    className="p-4 bg-neutral-900/40 hover:bg-amber-950/20 text-left space-y-2 transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-95 border-b-2 border-transparent hover:border-amber-500/40 w-full focus:outline-none"
+                    onClick={() => document.getElementById("cc-sec-03")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    className="p-4 bg-neutral-900/40 hover:bg-cyan-950/20 text-left space-y-2 transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-95 border-b-2 border-transparent hover:border-cyan-500/40 w-full focus:outline-none"
                   >
-                    <span className="font-mono text-amber-400 text-[10px] font-bold block group-hover:translate-x-0.5 transition-transform">03 &rarr;</span>
-                    <span className="text-[10.5px] text-neutral-300 font-sans block leading-tight group-hover:text-amber-200 transition-colors font-semibold">Comparativa y Beneficios</span>
+                    <span className="font-mono text-cyan-400 text-[10px] font-bold block group-hover:translate-x-0.5 transition-transform">03 &rarr;</span>
+                    <span className="text-[10.5px] text-neutral-300 font-sans block leading-tight group-hover:text-cyan-200 transition-colors font-semibold">Instalación del Plugin</span>
                   </button>
 
                   <button 
-                    onClick={() => document.getElementById("openwa-sec-04")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                    className="p-4 bg-neutral-900/40 hover:bg-amber-950/20 text-left space-y-2 transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-95 border-b-2 border-transparent hover:border-amber-500/40 w-full focus:outline-none"
+                    onClick={() => document.getElementById("cc-sec-05")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    className="p-4 bg-neutral-900/40 hover:bg-cyan-950/20 text-left space-y-2 transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-95 border-b-2 border-transparent hover:border-cyan-500/40 w-full focus:outline-none"
                   >
-                    <span className="font-mono text-amber-400 text-[10px] font-bold block group-hover:translate-x-0.5 transition-transform">04 &rarr;</span>
-                    <span className="text-[10.5px] text-neutral-300 font-sans block leading-tight group-hover:text-amber-200 transition-colors font-semibold">Instalación y Primer Envío</span>
+                    <span className="font-mono text-cyan-400 text-[10px] font-bold block group-hover:translate-x-0.5 transition-transform">04 &rarr;</span>
+                    <span className="text-[10.5px] text-neutral-300 font-sans block leading-tight group-hover:text-cyan-200 transition-colors font-semibold">Prompts de Escaneo</span>
                   </button>
                 </div>
 
-                {/* SECTION 1: QUE ES */}
-                <div id="openwa-sec-01" className="space-y-6 pt-2 scroll-mt-24">
+                {/* SECTION 00: QUE ES */}
+                <div id="cc-sec-00" className="space-y-6 pt-2 scroll-mt-24">
                   <div className="space-y-1">
                     <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
-                      <strong className="text-amber-500 font-sans">01</strong> • Qué es OpenWA
+                      <strong className="text-cyan-500">00</strong> • Qué es Claude Code Setup
                     </span>
                     <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">
-                      Tu propio WhatsApp, convertido en una API REST que controlas tú
+                      Un consejero, no un wizard: escanea y recomienda, tú decides
                     </h3>
                   </div>
 
                   <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-sans">
-                    Si alguna vez has intentado conectar WhatsApp a tu negocio —para calificar leads, enviar recordatorios o integrar soporte inteligente— seguro te topaste con la barrera de las tarifas abusivas o la complejidad técnica. <strong className="text-white">OpenWA resuelve esto de raíz</strong>. Consiste en un sistema auto-hospedado que actúa como intermediario local y te provee endpoints RESTful limpios, webhooks para recibir mensajes en tiempo real y una interfaz gráfica (dashboard) de control.
+                    Todos los que construimos con Claude Code venimos del mismo lugar: abres un proyecto nuevo, lo quieres configurar bien y no sabes por dónde empezar. ¿Le instalo hooks? ¿Cuáles? ¿Un MCP server me sirve aquí? ¿Qué skills necesito? Anthropic publicó un plugin oficial que resuelve exactamente esa pregunta.
+                  </p>
+                  <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-sans">
+                    Se llama <strong className="text-cyan-400 font-mono">claude-code-setup</strong> y vive en el marketplace oficial <strong className="text-white">claude-plugins-official</strong>. Con un solo comando escanea tu proyecto, entiende tu stack y te recomienda las top 1-2 automatizaciones de cada categoría. Tú decides cuáles aplicar.
                   </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-5 bg-neutral-950/50 border border-white/5 rounded-2xl text-left space-y-2">
-                      <span className="text-xs font-bold text-amber-400 font-sans uppercase">Soberanía de Datos</span>
+                      <span className="text-xs font-bold text-cyan-400 font-sans uppercase block">&#10003; Plugin oficial de Anthropic</span>
                       <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
-                        Tus conversaciones, contactos e imágenes jamás cruzan por servidores externos ajenos. Al correr en tu propia infraestructura, garantizas el cumplimiento de normativas de datos y privacidad total para tus clientes.
+                        Lo mantiene el equipo de Anthropic (Isabella He). Vive en el repo público anthropics/claude-plugins-official (~20K estrellas).
                       </p>
                     </div>
 
                     <div className="p-5 bg-neutral-950/50 border border-white/5 rounded-2xl text-left space-y-2">
-                      <span className="text-xs font-bold text-amber-400 font-sans uppercase">Cero Costos Ocultos</span>
+                      <span className="text-xs font-bold text-cyan-400 font-sans uppercase block">&#10003; 100% read-only</span>
                       <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
-                        A diferencia de la API de Cloud oficial de Meta o brokers de reventa de terceros, con OpenWA puedes enviar millones de mensajes mensuales sin pagar un solo centavo más que el costo básico de tu VPS.
+                        Escanea tus archivos pero no cambia nada. Tú sigues siendo el dueño absoluto de qué se aplica y qué no.
+                      </p>
+                    </div>
+
+                    <div className="p-5 bg-neutral-950/50 border border-white/5 rounded-2xl text-left space-y-2">
+                      <span className="text-xs font-bold text-cyan-400 font-sans uppercase block">&#10003; Top 1-2 por categoría</span>
+                      <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                        No te tira una lista infinita. Eligen las 2 automatizaciones más valiosas de acuerdo a tu stack real de frameworks y dependencias.
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-5 border border-dashed border-amber-500/35 bg-neutral-900/40 rounded-2xl relative text-left">
-                    <span className="absolute -top-3 left-4 px-2 bg-neutral-950 border border-amber-500/30 rounded text-amber-400 font-mono text-[9px] font-bold uppercase tracking-widest text-[10px]">Wentix • Clave</span>
+                  <div className="p-5 border border-dashed border-cyan-500/35 bg-neutral-900/40 rounded-2xl relative text-left">
+                    <span className="absolute -top-3 left-4 px-2 bg-neutral-950 border border-cyan-500/30 rounded text-cyan-400 font-mono text-[9px] font-bold uppercase tracking-widest text-[10px]">Wentix • Clave</span>
                     <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
-                      OpenWA traduce la interacción del navegador web de WhatsApp en un servicio de backend estable y multi-sesión. Todo el encriptado de extremo a extremo original de la red se mantiene intacto ya que emula un cliente web autorizado por código QR.
+                      <strong>Piénsalo así:</strong> es como cuando un amigo dev experto entra a tu proyecto, mira el package.json, los archivos, la estructura, y te dice "acá te falta un hook de auto-format, este MCP te ahorra horas, este subagent te va a salvar en producción". Pero no toca nada: tú decides qué aplicar. Esa es la diferencia entre claude-code-setup y un wizard de scaffolding: el wizard arma todo solo, este te pregunta antes.
                     </p>
                   </div>
                 </div>
 
-                {/* SECTION 2: QUE INCLUYE Y STACK */}
-                <div id="openwa-sec-02" className="space-y-6 pt-2 scroll-mt-24">
+                {/* SECTION 01: INSTALAR CC */}
+                <div id="cc-sec-01" className="space-y-6 pt-2 scroll-mt-24">
                   <div className="space-y-1">
                     <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
-                      <strong className="text-amber-500 font-sans">02</strong> • Características y Arquitectura
+                      <strong className="text-cyan-500">01</strong> • Requisito previo
                     </span>
                     <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">
-                      Un motor robusto y listo para ambientes corporativos
+                      Tener Claude Code listo: Dos caminos
                     </h3>
                   </div>
 
                   <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-sans">
-                    El proyecto está diseñado bajo una arquitectura modular robusta, brindando estabilidad sin devorar recursos del sistema servidor. Contiene todo lo que se requiere para flujos de producción:
+                    Antes de instalar el plugin, necesitas tener Claude Code corriendo en tu computadora. Hay dos caminos: la app oficial de escritorio (lo más fácil si es tu primera vez) o el CLI en tu terminal (más liviano para devs). El plugin funciona exactamente igual en ambos.
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-left">
-                    <div className="p-4 bg-neutral-950 border border-white/5 rounded-xl space-y-2">
-                      <div className="font-bold text-xs text-white uppercase tracking-wider font-mono">⚡ El Núcleo</div>
-                      <ul className="text-[11px] text-neutral-400 space-y-1 font-sans list-disc list-inside">
-                        <li>API REST unificada</li>
-                        <li>Multi-sesión activa</li>
-                        <li>Documentación Swagger</li>
-                        <li>Dashboard interactivo</li>
-                      </ul>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono m-0">Camino A • App de Escritorio</h4>
+                      <ol className="list-decimal list-inside text-xs text-neutral-400 space-y-2 font-sans pl-1">
+                        <li>
+                          <strong className="text-white">Descarga desde la web oficial:</strong> Ve a <a href="https://claude.ai/download" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">claude.ai/download</a> y descarga el cliente adecuado para tu sistema.
+                        </li>
+                        <li>
+                          <strong className="text-white">Instalación directa:</strong> Ejecuta el instalador e inicia sesión con tu cuenta existente de Claude.
+                        </li>
+                        <li>
+                          <strong className="text-white">Confirma la versión 2.x:</strong> Ve a Settings &rarr; About y verifica que estés en la versión 2.0 o superior para habilitar el uso de plugins.
+                        </li>
+                      </ol>
                     </div>
 
-                    <div className="p-4 bg-neutral-950 border border-white/5 rounded-xl space-y-2">
-                      <div className="font-bold text-xs text-white uppercase tracking-wider font-mono">💬 Canales</div>
-                      <ul className="text-[11px] text-neutral-400 space-y-1 font-sans list-disc list-inside">
-                        <li>Mensajería de Texto</li>
-                        <li>Archivos, Fotos y Audio</li>
-                        <li>Manejo de Reacciones</li>
-                        <li>Estatus de Entrega</li>
-                      </ul>
-                    </div>
-
-                    <div className="p-4 bg-neutral-950 border border-white/5 rounded-xl space-y-2">
-                      <div className="font-bold text-xs text-white uppercase tracking-wider font-mono">🛠️ Avanzado</div>
-                      <ul className="text-[11px] text-neutral-400 space-y-1 font-sans list-disc list-inside">
-                        <li>Gestión de Grupos</li>
-                        <li>Canales y Difusión</li>
-                        <li>Soporte de Proxies</li>
-                        <li>Límites de Envío</li>
-                      </ul>
-                    </div>
-
-                    <div className="p-4 bg-neutral-950 border border-white/5 rounded-xl space-y-2">
-                      <div className="font-bold text-xs text-white uppercase tracking-wider font-mono">📦 Infraestructura</div>
-                      <ul className="text-[11px] text-neutral-400 space-y-1 font-sans list-disc list-inside">
-                        <li>SQLite o PostgreSQL</li>
-                        <li>Caché interno Redis</li>
-                        <li>Almacenamiento S3</li>
-                        <li>Health status check</li>
-                      </ul>
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono m-0">Camino B • CLI de Consola</h4>
+                      <ol className="list-decimal list-inside text-xs text-neutral-400 space-y-2 font-sans pl-1">
+                        <li>
+                          <strong className="text-white">Valida Node.js 18+:</strong> Ejecuta <code>node --version</code> para confirmar compatibilidad mínima.
+                        </li>
+                        <li>
+                          <button 
+                            onClick={() => handleCopy("npm install -g @anthropic-ai/claude-code", "npmCC")} 
+                            className="bg-neutral-900 border border-white/5 hover:border-cyan-500/20 px-2.5 py-1 text-[11px] text-cyan-400 rounded-lg cursor-pointer flex items-center gap-1.5 font-mono mb-2"
+                          >
+                            <span>npm install -g @anthropic-ai/claude-code</span>
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            onClick={() => handleCopy("brew install --cask claude-code", "brewCC")} 
+                            className="bg-neutral-900 border border-white/5 hover:border-cyan-500/20 px-2.5 py-1 text-[11px] text-cyan-400 rounded-lg cursor-pointer flex items-center gap-1.5 font-mono"
+                          >
+                            <span>brew install --cask claude-code</span>
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </li>
+                      </ol>
                     </div>
                   </div>
 
-                  <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono m-0">Stack Tecnológico Principal:</h4>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {["Node.js v20", "NestJS v11", "TypeScript 5", "Docker & Compose", "PostgreSQL", "Redis", "MinIO / AWS S3"].map((tech, idx) => (
-                        <span key={idx} className="px-2.5 py-1 bg-neutral-900 border border-white/10 rounded-full text-[10.5px] font-mono text-neutral-300">
-                          {tech}
-                        </span>
-                      ))}
+                  {/* SECTION 02: ABRIR PROYECTO */}
+                  <div id="cc-sec-02" className="pt-4 space-y-3 text-left">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                      <strong className="text-cyan-500">02</strong> • Abrir tu Proyecto
+                    </span>
+                    <h4 className="text-sm font-black text-white font-display uppercase tracking-tight m-0">
+                      Claude tiene que ver tu codebase
+                    </h4>
+                    <p className="text-xs text-neutral-400 leading-relaxed font-sans">
+                      Para que el recomendador pueda leer tu stack, debes abrir Claude Code dentro de la raíz de la carpeta del proyecto. 
+                      En la app de escritorio, usa <strong className="text-white">File &rarr; Open Folder</strong>. 
+                      En la terminal, haz un <code className="text-white font-mono">cd ~/tu-proyecto</code> y luego escribe <code className="text-white font-mono">claude</code> para arrancar.
+                    </p>
+                  </div>
+                </div>
+
+                {/* SECTION 03: INSTALACION PLUGIN */}
+                <div id="cc-sec-03" className="space-y-6 pt-2 scroll-mt-24">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                      <strong className="text-cyan-500">03</strong> • Instalación en un paso
+                    </span>
+                    <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">
+                      Instalar el plugin: 1 comando, 5 segundos
+                    </h3>
+                  </div>
+
+                  <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-sans">
+                    Con Claude Code abierto, pega este comando directamente en el chat para instalar el recomendador de forma global desde el marketplace oficial:
+                  </p>
+
+                  <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3 font-sans w-full font-sans">
+                    <div className="flex items-center justify-between font-sans">
+                      <h4 className="text-xs md:text-sm font-bold text-white uppercase font-display leading-tight m-0">Comando de Instalación:</h4>
+                      <button 
+                        onClick={() => handleCopy("/plugin install claude-code-setup@claude-plugins-official", "pluginInstallCmd")} 
+                        className="px-2.5 py-0.5 bg-neutral-800 text-[10px] text-white rounded font-medium hover:bg-neutral-700 transition cursor-pointer font-sans"
+                      >
+                        {copiedStates["pluginInstallCmd"] ? "✓ Copiado" : "Copiar"}
+                      </button>
+                    </div>
+                    <pre className="p-3.5 text-[10.5px] text-neutral-400 overflow-x-auto leading-relaxed whitespace-pre font-mono bg-black/20 rounded-lg">
+/plugin install claude-code-setup@claude-plugins-official
+                    </pre>
+
+                    <p className="text-[11px] text-neutral-400 leading-relaxed font-sans pt-2">
+                      Posteriormente, ejecuta esto para recargar todos tus plugins activos sin necesidad de reiniciar la app:
+                    </p>
+
+                    <div className="flex items-center justify-between font-sans">
+                      <h4 className="text-xs font-bold text-white uppercase font-mono m-0">Comando de Recarga:</h4>
+                      <button 
+                        onClick={() => handleCopy("/reload-plugins", "reloadPluginsCmd")} 
+                        className="px-2.5 py-0.5 bg-neutral-800 text-[10px] text-white rounded font-medium hover:bg-neutral-700 transition cursor-pointer font-sans"
+                      >
+                        {copiedStates["reloadPluginsCmd"] ? "✓ Copiado" : "Copiar"}
+                      </button>
+                    </div>
+                    <pre className="p-3.5 text-[10.5px] text-neutral-400 overflow-x-auto leading-relaxed whitespace-pre font-mono bg-black/20 rounded-lg">
+/reload-plugins
+                    </pre>
+                  </div>
+
+                  <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-2">
+                    <span className="text-xs font-bold text-cyan-400 font-sans uppercase">Si te sale error: "plugin not found"</span>
+                    <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                      Si por alguna razón tu instalación no trae preconfigurado el marketplace, puedes meterlo de forma manual con el comando: 
+                      <span className="text-white block font-mono text-center font-bold bg-neutral-900 py-1.5 rounded-lg border border-white/5 mt-2 select-all font-mono">/plugin marketplace add anthropics/claude-plugins-official</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* SECTION 04: LAS 5 CATEGORIAS */}
+                <div id="cc-sec-04" className="space-y-6 pt-2 scroll-mt-24">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                      <strong className="text-cyan-500">04</strong> • Áreas de Análisis
+                    </span>
+                    <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">
+                      Las 5 categorías que el plugin te recomienda
+                    </h3>
+                  </div>
+
+                  <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-sans">
+                    Cuando le pides que escanee tu proyecto, el recomendador separa sus propuestas en estas 5 vertientes fundamentales:
+                  </p>
+
+                  <div className="space-y-4 font-sans">
+                    {/* CATEGORY 1 */}
+                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-2 flex gap-4 items-start font-sans">
+                      <div className="w-8 h-8 rounded-lg bg-cyan-950/40 border border-cyan-800/30 text-cyan-400 font-bold flex items-center justify-center font-mono text-xs shrink-0 mt-1 font-mono">1</div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-white uppercase font-display leading-none m-0">Hooks (Acciones Automáticas)</h4>
+                        <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                          Disparadores que ejecutan formateadores (auto-format como Prettier), linter (auto-lint) u otras validaciones de Git antes de que guardes cambios de manera totalmente transparente.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* CATEGORY 2 */}
+                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-2 flex gap-4 items-start font-sans">
+                      <div className="w-8 h-8 rounded-lg bg-cyan-950/40 border border-cyan-800/30 text-cyan-400 font-bold flex items-center justify-center font-mono text-xs shrink-0 mt-1 font-mono">2</div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-white uppercase font-display leading-none m-0">Skills (Capacidades de Conocimiento)</h4>
+                        <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                          Manuales de instrucciones inyectados en Claude (SKILL.md) que le dotan de experiencia modular inmediata, por ejemplo, diseño guiado de interfaces, revisiones técnicas estructuradas, etc.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* CATEGORY 3 */}
+                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-2 flex gap-4 items-start font-sans">
+                      <div className="w-8 h-8 rounded-lg bg-cyan-950/40 border border-cyan-800/30 text-cyan-400 font-bold flex items-center justify-center font-mono text-xs shrink-0 mt-1 font-mono">3</div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-white uppercase font-display leading-none m-0">MCP Servers (Conectores Externos)</h4>
+                        <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                          Soporte para bases de datos, APIs o navegadores virtuales avanzados por medio de automatizaciones en terminal (como Playwright para scraping).
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* CATEGORY 4 */}
+                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-2 flex gap-4 items-start font-sans">
+                      <div className="w-8 h-8 rounded-lg bg-cyan-950/40 border border-cyan-800/30 text-cyan-400 font-bold flex items-center justify-center font-mono text-xs shrink-0 mt-1 font-mono">4</div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-white uppercase font-display leading-none m-0">Subagents (Especialistas de Tarea)</h4>
+                        <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                          Llamado automático de consultores temáticos en background (revisiones de seguridad, rendimiento, patrones SQL ineficientes), regresando con diagnósticos refinados.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* CATEGORY 5 */}
+                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-2 flex gap-4 items-start font-sans">
+                      <div className="w-8 h-8 rounded-lg bg-cyan-950/40 border border-cyan-800/30 text-cyan-400 font-bold flex items-center justify-center font-mono text-xs shrink-0 mt-1 font-mono">5</div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-white uppercase font-display leading-none m-0">Slash Commands (Atajos de Acción)</h4>
+                        <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                          Comandos inmediatos como <code>/test</code>, <code>/explain</code>, <code>/pr-review</code> que ejecutan flujos de trabajo extensos y formatean sus respuestas de forma estricta.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* SECTION 3: COMPARATIVA */}
-                <div id="openwa-sec-03" className="space-y-6 pt-2 scroll-mt-24">
+                {/* SECTION 05: PROMPTS */}
+                <div id="cc-sec-05" className="space-y-6 pt-2 scroll-mt-24">
                   <div className="space-y-1">
                     <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
-                      <strong className="text-amber-500 font-sans">03</strong> • Tabla de Comparativa Comercial
+                      <strong className="text-cyan-500">05</strong> • Biblioteca de Prompts
                     </span>
                     <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">
-                      OpenWA vs Soluciones de Pago Cerradas
+                      4 Prompts maestros para disparar el análisis
                     </h3>
                   </div>
-
-                  <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-sans">
-                    Generalmente las integraciones se cierran bajo muros de pago elevados o SDKs desactualizados. Aquí puedes ver una comparativa honesta de características construida por los desarrolladores principales del proyecto:
-                  </p>
-
-                  <div className="overflow-x-auto border border-white/5 rounded-2xl">
-                    <table className="w-full text-left border-collapse font-sans text-xs">
-                      <thead>
-                        <tr className="bg-neutral-950 border-b border-white/10">
-                          <th className="p-3 text-white font-mono uppercase text-[10px] tracking-wider text-left">Función</th>
-                          <th className="p-3 text-amber-400 font-mono uppercase text-[10px] tracking-wider text-center">OpenWA</th>
-                          <th className="p-3 text-neutral-400 font-mono uppercase text-[10px] tracking-wider text-center">Alternativa Core</th>
-                          <th className="p-3 text-neutral-400 font-mono uppercase text-[10px] tracking-wider text-center">Alternativa Plus</th>
-                          <th className="p-3 text-neutral-400 font-mono uppercase text-[10px] tracking-wider text-center">API Cloud Meta</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5 text-neutral-300 bg-neutral-900/10">
-                        <tr>
-                          <td className="p-3 font-semibold text-white text-[11px]">Precio Inicial</td>
-                          <td className="p-3 text-center text-amber-400 font-mono font-bold bg-amber-500/5 text-[11px]">Gratis total</td>
-                          <td className="p-3 text-center text-[11px]">Gratis limitado</td>
-                          <td className="p-3 text-center text-[11px]">Desde $50/mes</td>
-                          <td className="p-3 text-center text-[11px]">Pago por mensaje</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 font-semibold text-white text-[11px]">Código Abierto</td>
-                          <td className="p-3 text-center text-amber-400 font-semibold bg-amber-500/5 text-[11px]">✓ Sí (MIT)</td>
-                          <td className="p-3 text-center text-neutral-500 text-[11px]">✗ No</td>
-                          <td className="p-3 text-center text-neutral-500 text-[11px]">✗ No</td>
-                          <td className="p-3 text-center text-neutral-500 text-[11px]">✗ No</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 font-semibold text-white text-[11px]">Soberanía Máxima (Self-Hosted)</td>
-                          <td className="p-3 text-center text-amber-400 bg-amber-500/5 text-[11px]">✓ Local o VPS</td>
-                          <td className="p-3 text-center text-[11px]">✓ Parcial</td>
-                          <td className="p-3 text-center text-[11px]">✓ Parcial</td>
-                          <td className="p-3 text-center text-neutral-500 text-[11px]">✗ En la nube de Meta</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 font-semibold text-white text-[11px]">Multi-sesión de Números</td>
-                          <td className="p-3 text-center text-amber-400 bg-amber-500/5 text-[11px]">✓ Sin límite</td>
-                          <td className="p-3 text-center text-[11px]">Limitado a 1</td>
-                          <td className="p-3 text-center text-[11px]">✓ Soportado</td>
-                          <td className="p-3 text-center text-[11px]">✓ Soportado</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 font-semibold text-white text-[11px]">Dashboard con UI Web</td>
-                          <td className="p-3 text-center text-amber-400 bg-amber-500/5 text-[11px]">✓ Incluido</td>
-                          <td className="p-3 text-center text-neutral-500 text-[11px]">✗ No</td>
-                          <td className="p-3 text-center text-[11px]">✓ Soportado</td>
-                          <td className="p-3 text-center text-[11px]">✓ Soportado</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 font-semibold text-white text-[11px]">Base de datos Postgres nativa</td>
-                          <td className="p-3 text-center text-amber-400 bg-amber-500/5 text-[11px]">✓ Sí</td>
-                          <td className="p-3 text-center text-neutral-500 text-[11px]">✗ No</td>
-                          <td className="p-3 text-center text-[11px]">✓ Sí</td>
-                          <td className="p-3 text-center text-neutral-500 text-[11px]">N/A</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* SECTION 4: INSTALACION Y USO */}
-                <div id="openwa-sec-04" className="space-y-6 pt-2 scroll-mt-24">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
-                      <strong className="text-amber-500 font-sans">04</strong> • Guía de Despliegue y Pruebas
-                    </span>
-                    <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">
-                      Despliega tu servidor en 3 comandos de terminal
-                    </h3>
-                  </div>
-
-                  <p className="text-xs md:text-sm text-neutral-300 leading-relaxed font-sans">
-                    La forma más aconsejada, limpia e inmediata de arrancar el servidor en producción o local es utilizando <strong className="text-white">Docker Compose</strong>. Esto levantará automáticamente el backend, la base de datos necesaria y la interfaz web en sus respectivos puertos.
-                  </p>
 
                   <div className="space-y-4">
-                    {/* INSTALACION DOCKER */}
+                    {/* PROMPT 1 */}
                     <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3 font-sans w-full">
                       <div className="flex items-center justify-between font-sans">
-                        <h4 className="text-xs md:text-sm font-bold text-white uppercase font-display leading-tight m-0">Instalar con Docker Compose:</h4>
+                        <h4 className="text-xs md:text-sm font-bold text-white uppercase font-display leading-tight m-0">Prompt 01: El más directo (del README oficial)</h4>
                         <button 
-                          onClick={() => handleCopy("git clone https://github.com/rmyndharis/OpenWA.git\ncd OpenWA\ndocker compose up -d", "dockerInstall")} 
+                          onClick={() => handleCopy(PROMPTS_TEXTS.claudeCodeRecomendaciones, "pCCRec")} 
                           className="px-2.5 py-0.5 bg-neutral-800 text-[10px] text-white rounded font-medium hover:bg-neutral-700 transition cursor-pointer font-sans"
                         >
-                          {copiedStates["dockerInstall"] ? "✓ Copiado" : "Copiar"}
+                          {copiedStates["pCCRec"] ? "✓ Copiado" : "Copiar"}
                         </button>
                       </div>
-                      <pre className="p-3.5 text-[10px] text-neutral-400 overflow-x-auto max-h-56 leading-relaxed whitespace-pre font-mono bg-black/20 rounded-lg">
-{`# 1. Clona el repositorio oficial
-git clone https://github.com/rmyndharis/OpenWA.git
-
-# 2. Entra al directorio
-cd OpenWA
-
-# 3. Levanta los contenedores en modo detached
-docker compose up -d`}
+                      <pre className="p-3.5 text-[10.5px] text-neutral-400 overflow-x-auto leading-relaxed whitespace-pre font-mono bg-black/20 rounded-lg">
+                        {PROMPTS_TEXTS.claudeCodeRecomendaciones}
                       </pre>
                     </div>
 
-                    <p className="text-xs text-neutral-400 leading-relaxed font-sans">
-                      Una vez finalizado, las distintas capas de tu servidor habrán levantado y estarán expuestas inmediatamente en estas direcciones:
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="p-4 bg-neutral-950/70 border border-white/5 rounded-xl text-left space-y-1">
-                        <span className="font-mono text-xs text-amber-400">http://localhost:2886</span>
-                        <p className="text-[11px] text-neutral-400 leading-normal m-0 font-sans">
-                          <strong>Dashboard Web:</strong> Interfaz visual donde creas sesiones y escaneas el código QR con el celular.
-                        </p>
-                      </div>
-
-                      <div className="p-4 bg-neutral-950/70 border border-white/5 rounded-xl text-left space-y-1">
-                        <span className="font-mono text-xs text-amber-400">http://localhost:2785/api</span>
-                        <p className="text-[11px] text-neutral-400 leading-normal m-0 font-sans">
-                          <strong>Endpoint Base REST:</strong> URL base de conexión para que inyectes peticiones desde tus scripts u apps.
-                        </p>
-                      </div>
-
-                      <div className="p-4 bg-neutral-950/70 border border-white/5 rounded-xl text-left space-y-1">
-                        <span className="font-mono text-xs text-amber-400">http://localhost:2785/api/docs</span>
-                        <p className="text-[11px] text-neutral-400 leading-normal m-0 font-sans">
-                          <strong>Swagger Docs:</strong> Consola con toda la documentación oficial interactiva de cada endpoint.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* ENVIAR PRIMER MENSAJE */}
-                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3 font-sans w-full pt-6">
+                    {/* PROMPT 2 */}
+                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3 font-sans w-full font-sans">
                       <div className="flex items-center justify-between font-sans">
-                        <h4 className="text-xs md:text-sm font-bold text-white uppercase font-display leading-tight m-0">Enviar un Mensaje de Prueba:</h4>
+                        <h4 className="text-xs md:text-sm font-bold text-white uppercase font-display leading-tight m-0 font-sans">Prompt 02: Narrativo (ideal al arrancar de cero)</h4>
                         <button 
-                          onClick={() => handleCopy(`curl -X POST http://localhost:2785/api/sessions/mi-bot/messages/send-text \\\n  -H "Content-Type: application/json" \\\n  -H "X-API-Key: TU_API_KEY" \\\n  -d '{\n    "chatId": "5215512345678@c.us",\n    "text": "Hola desde OpenWA 🚀"\n  }'`, "curlSendMsg")} 
+                          onClick={() => handleCopy(PROMPTS_TEXTS.claudeCodeNarrativo, "pCCNarr")} 
                           className="px-2.5 py-0.5 bg-neutral-800 text-[10px] text-white rounded font-medium hover:bg-neutral-700 transition cursor-pointer font-sans"
                         >
-                          {copiedStates["curlSendMsg"] ? "✓ Copiado" : "Copiar"}
+                          {copiedStates["pCCNarr"] ? "✓ Copiado" : "Copiar"}
                         </button>
                       </div>
-                      <pre className="p-3.5 text-[10px] text-neutral-400 overflow-x-auto max-h-56 leading-relaxed whitespace-pre font-mono bg-black/20 rounded-lg">
-{`curl -X POST http://localhost:2785/api/sessions/mi-bot/messages/send-text \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: TU_API_KEY" \\
-  -d '{
-    "chatId": "5215512345678@c.us",
-    "text": "Hola desde OpenWA 🚀"
-  }'`}
+                      <pre className="p-3.5 text-[10.5px] text-neutral-400 overflow-x-auto max-h-56 leading-relaxed whitespace-pre-wrap font-mono bg-black/20 rounded-lg">
+                        {PROMPTS_TEXTS.claudeCodeNarrativo}
+                      </pre>
+                    </div>
+
+                    {/* PROMPT 3 */}
+                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3 font-sans w-full font-sans">
+                      <div className="flex items-center justify-between font-sans">
+                        <h4 className="text-xs md:text-sm font-bold text-white uppercase font-display leading-tight m-0 font-sans">Prompt 03: Focalizado (solo para Hooks)</h4>
+                        <button 
+                          onClick={() => handleCopy(PROMPTS_TEXTS.claudeCodeFocalizado, "pCCFoc")} 
+                          className="px-2.5 py-0.5 bg-neutral-800 text-[10px] text-white rounded font-medium hover:bg-neutral-700 transition cursor-pointer font-sans"
+                        >
+                          {copiedStates["pCCFoc"] ? "✓ Copiado" : "Copiar"}
+                        </button>
+                      </div>
+                      <pre className="p-3.5 text-[10.5px] text-neutral-400 overflow-x-auto max-h-56 leading-relaxed whitespace-pre-wrap font-mono bg-black/20 rounded-lg">
+                        {PROMPTS_TEXTS.claudeCodeFocalizado}
+                      </pre>
+                    </div>
+
+                    {/* PROMPT 4 */}
+                    <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3 font-sans w-full font-sans">
+                      <div className="flex items-center justify-between font-sans">
+                        <h4 className="text-xs md:text-sm font-bold text-white uppercase font-display leading-tight m-0 font-sans">Prompt 04: Extendido con Justificaciones</h4>
+                        <button 
+                          onClick={() => handleCopy(PROMPTS_TEXTS.claudeCodeExtendido, "pCCExt")} 
+                          className="px-2.5 py-0.5 bg-neutral-800 text-[10px] text-white rounded font-medium hover:bg-neutral-700 transition cursor-pointer font-sans"
+                        >
+                          {copiedStates["pCCExt"] ? "✓ Copiado" : "Copiar"}
+                        </button>
+                      </div>
+                      <pre className="p-3.5 text-[10.5px] text-neutral-400 overflow-x-auto max-h-56 leading-relaxed whitespace-pre-wrap font-mono bg-black/20 rounded-lg">
+                        {PROMPTS_TEXTS.claudeCodeExtendido}
                       </pre>
                     </div>
                   </div>
                 </div>
 
-                {/* FAQ Y CASOS DE USO */}
-                <div id="openwa-sec-05" className="space-y-6 pt-2 scroll-mt-24 border-t border-white/5">
+                {/* SECTION 06: EL FLOW */}
+                <div id="cc-sec-06" className="space-y-6 pt-2 scroll-mt-24">
                   <div className="space-y-1">
                     <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
-                      Preguntas Frecuentes • FAQs
+                      <strong className="text-cyan-500">06</strong> • Qué Esperar
                     </span>
                     <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">
-                      Dudas Rápidas de la Comunidad
+                      El flujo del análisis en 5 instantes
                     </h3>
                   </div>
 
-                  <div className="space-y-4 text-left">
-                    <div className="p-5 bg-neutral-950/40 rounded-xl space-y-2 border border-white/5">
-                      <span className="text-xs font-bold text-amber-400 font-mono block">¿Es seguro para mis números de negocio?</span>
-                      <p className="text-xs text-neutral-450 leading-relaxed m-0 font-sans">
-                        OpenWA utiliza protocolos estándar imitando la interfaz oficial de WhatsApp Web. Para máxima seguridad, te aconsejamos respetar tiempos prudentes entre envíos, evitar el envío de spam o contenido no solicitado y habilitar las políticas de Rate Limiting integradas para prevenir baneos de números por parte de la red de Meta.
+                  <div className="space-y-4">
+                    <ol className="list-decimal list-inside text-xs text-neutral-400 space-y-3 font-sans pl-1">
+                      <li>
+                        <strong className="text-white font-sans">Escaneo inteligente read-only:</strong> Claude lee tus configuraciones y package.json, identificando frameworks al instante sin tocar un solo archivo.
+                      </li>
+                      <li>
+                        <strong className="text-white font-sans">Procesamiento de 30s-1min:</strong> Tarda apenas unos segundos en destilar la estructura según la complejidad de la codebase.
+                      </li>
+                      <li>
+                        <strong className="text-white font-sans">Output resumido:</strong> Te devuelve una propuesta limpia con los comandos para aplicar la configuración deseada en cada categoría.
+                      </li>
+                      <li>
+                        <strong className="text-white font-sans">Evaluación manual:</strong> Tú decides qué elementos instalar de forma consciente; ninguno se activa en background de manera oculta o automática.
+                      </li>
+                      <li>
+                        <strong className="text-white font-sans">Fácil setup de plugins:</strong> Las propuestas traen listas y comandos claros optimizados para meter al marketplace global.
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+
+                {/* SECTION 07: TRAMPAS */}
+                <div id="cc-sec-07" className="space-y-6 pt-2 scroll-mt-24 border-t border-white/5">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                      Advertencias Reales
+                    </span>
+                    <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">
+                      Las 6 trampas de las que nadie habla
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <div className="p-4 bg-neutral-950/40 rounded-xl space-y-1 border border-white/5 font-sans">
+                      <span className="text-xs font-bold text-cyan-400 font-mono block font-mono">1. Requiere versión 2.x</span>
+                      <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
+                        La API de plugins no está disponible en las versiones 1.x antiguas. Actualiza antes de correrlo.
                       </p>
                     </div>
 
-                    <div className="p-5 bg-neutral-950/40 rounded-xl space-y-2 border border-white/5">
-                      <span className="text-xs font-bold text-amber-400 font-mono block">¿Cómo puedo conectar la API con agentes o Claude Code?</span>
-                      <p className="text-xs text-neutral-450 leading-relaxed m-0 font-sans">
-                        Dado que OpenWA provee una documentación OpenAPI standard en /api/docs, puedes copiar la especificación JSON o YAML de tus endpoints y dárselas a Claude. Te puede generar plugins nativos de MCP para Claude Code en segundos, permitiendo que tu terminal automatizada mande WhatsApps tras completar tareas o despliegues.
+                    <div className="p-4 bg-neutral-950/40 rounded-xl space-y-1 border border-white/5 font-sans">
+                      <span className="text-xs font-bold text-cyan-400 font-mono block font-mono">2. Marketplace ausente</span>
+                      <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
+                        Si te da error "not found", es que el marketplace oficial de Anthropic no viene auto-cargado. Agregalo con el comando manual indicado en Paso 3.
                       </p>
                     </div>
 
-                    <div className="p-5 bg-neutral-950/40 rounded-xl space-y-2 border border-white/5">
-                      <span className="text-xs font-bold text-amber-400 font-mono block">¿Tiene costo mantener OpenWA?</span>
-                      <p className="text-xs text-neutral-450 leading-relaxed m-0 font-sans">
-                        El repositorio y el software son MIT, 100% gratuitos y libres para siempre. Tu único costo recurrente es la infraestructura del servidor local o la renta de tu VPS favorito (en plataformas como DigitalOcean o Hetzner puedes mantenerlo corriendo por costos tan reducidos como $4 a $6 USD mensuales).
+                    <div className="p-4 bg-neutral-950/40 rounded-xl space-y-1 border border-white/5 font-sans">
+                      <span className="text-xs font-bold text-cyan-400 font-mono block font-mono">3. Selección acotada</span>
+                      <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
+                        Solo te recomienda de las mejores 1-2 automatizaciones para mantenerlo limpio. Si quieres ver el catálogo completo usa la pestaña Discover del control de plugins.
                       </p>
                     </div>
+
+                    <div className="p-4 bg-neutral-950/40 rounded-xl space-y-1 border border-white/5 font-sans">
+                      <span className="text-xs font-bold text-cyan-400 font-mono block font-mono">4. Instalación manual</span>
+                      <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
+                        El plugin proporciona las instrucciones pero no instala directamente nada en tu computadora por cuestiones de seguridad.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-neutral-950/40 rounded-xl space-y-1 border border-white/5 font-sans">
+                      <span className="text-xs font-bold text-cyan-400 font-mono block font-mono">5. Timeout en repos grandiosos</span>
+                      <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
+                        Si tu proyecto tiene decenas de miles de archivos, Claude puede quedarse atascado. Apunta el escaneo solo a un subdirectorio si es el caso.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-neutral-950/40 rounded-xl space-y-1 border border-white/5 font-sans">
+                      <span className="text-xs font-bold text-cyan-400 font-mono block font-mono">6. Dependencias o claves de terceros</span>
+                      <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
+                        Ciertas integraciones recomendables (como las de Notion o servidores MCP específicos) igual requerirán que crees tus propias claves en esos portales de terceros.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* CHECKLIST */}
+                  <div className="p-5 border border-dashed border-cyan-500/35 bg-neutral-900/40 rounded-2xl relative text-left my-6">
+                    <span className="absolute -top-3 left-4 px-2 bg-neutral-950 border border-cyan-500/30 rounded text-cyan-400 font-mono text-[9px] font-bold uppercase tracking-widest text-[10px]">Lista para principiantes</span>
+                    <ul className="list-disc list-inside text-xs text-neutral-400 space-y-2 font-sans pt-1">
+                      <li>Confirma que tienes Claude Code v2.x corriendo.</li>
+                      <li>Abre cualquier proyecto tuyo (o crea una carpeta vacía).</li>
+                      <li>Instala el plugin con <code>/plugin install claude-code-setup@claude-plugins-official</code> y recarga.</li>
+                      <li>Pega el Prompt 01 y deja que analice tu espacio de trabajo.</li>
+                    </ul>
                   </div>
 
                   {/* RESOURCES AND LINKS */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-6 border-t border-white/5">
-                    <a href="https://github.com/rmyndharis/OpenWA" target="_blank" rel="noopener noreferrer" className="p-4 bg-neutral-950 hover:bg-neutral-900 border border-white/5 hover:border-amber-500/35 rounded-2xl text-left block transition-all group">
-                      <strong className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors uppercase font-mono block mb-1">Repositorio Oficial en GitHub</strong>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-6 border-t border-white/5">
+                    <a href="https://github.com/anthropics/claude-plugins-official" target="_blank" rel="noopener noreferrer" className="p-4 bg-neutral-950 hover:bg-neutral-900 border border-white/5 hover:border-cyan-500/35 rounded-2xl text-left block transition-all group">
+                      <strong className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors uppercase font-mono block mb-1">Repo Oficial en GitHub</strong>
                       <p className="text-[11px] text-neutral-400 leading-relaxed m-0 font-sans">
-                        Encuentra el código fuente, reporta incidencias o contribuye directamente con commits al core de OpenWA.
+                        Marketplace oficial de Anthropic (~20K estrellas) donde viven claude-code-setup y docenas de otros plugins oficiales.
                       </p>
                     </a>
 
-                    <a href="https://github.com/rmyndharis/OpenWA/blob/main/docs/README.md" target="_blank" rel="noopener noreferrer" className="p-4 bg-neutral-950 hover:bg-neutral-900 border border-white/5 hover:border-amber-500/35 rounded-2xl text-left block transition-all group">
-                      <strong className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors uppercase font-mono block mb-1">Guías de Configuración Docs</strong>
+                    <a href="https://code.claude.com/docs/en/discover-plugins" target="_blank" rel="noopener noreferrer" className="p-4 bg-neutral-950 hover:bg-neutral-900 border border-white/5 hover:border-cyan-500/35 rounded-2xl text-left block transition-all group">
+                      <strong className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors uppercase font-mono block mb-1">Docs de Plugins de Claude</strong>
                       <p className="text-[11px] text-neutral-400 leading-relaxed m-0 font-sans">
-                        Documentación detallada paso a paso sobre almacenamiento remoto en S3, variables de entorno avanzadas y bases relacionales.
-                      </p>
-                    </a>
-
-                    <a href="https://www.open-wa.org/" target="_blank" rel="noopener noreferrer" className="p-4 bg-neutral-950 hover:bg-neutral-900 border border-white/5 hover:border-amber-500/35 rounded-2xl text-left block transition-all group">
-                      <strong className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors uppercase font-mono block mb-1">Sitio Web Oficial del Software</strong>
-                      <p className="text-[11px] text-neutral-400 leading-relaxed m-0 font-sans">
-                        Consulta noticias sobre actualizaciones, anuncios principales, discusiones generales y la demo interactiva.
+                        Documentación de Anthropic sobre cómo descubrir, instalar y auditar el sistema de seguridad y permisos de plugins.
                       </p>
                     </a>
                   </div>
@@ -8676,6 +8905,499 @@ docker compose up -d`}
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {selectedGuideId === "skills-wentix-40" && (
+              <div className="space-y-12 text-left animate-fade-in text-neutral-200">
+                {/* HERO OVERVIEW */}
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-950/20 border border-amber-800/30 text-amber-400 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                    <span>Lección 17 de Wentix • Nivel Principiante</span>
+                  </div>
+                  <h1 className="text-2xl md:text-3.5xl font-extrabold text-white tracking-tight leading-none font-display uppercase font-mono">
+                    40 Skills de Wentix AI: <span className="text-amber-400 italic font-sans normal-case font-normal">copia, pega y úsalas hoy mismo</span>
+                  </h1>
+                  <p className="text-sm text-neutral-300 leading-relaxed max-w-3xl font-sans">
+                    Una skill es un archivo <strong className="text-white font-mono text-xs bg-neutral-900 px-1 py-0.5 rounded border border-white/5">SKILL.md</strong> que dejas en una carpeta. Claude lo lee, y desde ese momento sabe hacer ese trabajo sin que se lo vuelvas a explicar. <strong className="text-amber-400">La diferencia entre un Claude prendido y un Claude operando tu semana es esa carpeta.</strong> Aquí tienes las 40 que armamos en Wentix AI para que cualquiera las pegue hoy mismo.
+                  </p>
+                </div>
+
+                {/* METRICS / GLANCE */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 pt-2">
+                  <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-center space-y-1">
+                    <span className="text-xs font-mono text-amber-400 block font-bold">01–07</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-sans">Escritura</span>
+                  </div>
+                  <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-center space-y-1">
+                    <span className="text-xs font-mono text-amber-400 block font-bold">08–14</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-sans">Research</span>
+                  </div>
+                  <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-center space-y-1">
+                    <span className="text-xs font-mono text-amber-400 block font-bold">15–21</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-sans">Código</span>
+                  </div>
+                  <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-center space-y-1">
+                    <span className="text-xs font-mono text-amber-400 block font-bold">22–27</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-sans">Comms</span>
+                  </div>
+                  <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-center space-y-1">
+                    <span className="text-xs font-mono text-amber-400 block font-bold">28–34</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-sans">Datos</span>
+                  </div>
+                  <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-center space-y-1">
+                    <span className="text-xs font-mono text-amber-400 block font-bold">35–40</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-sans">Personal</span>
+                  </div>
+                </div>
+
+                {/* HOW IT WORKS / CONCEPT */}
+                <div className="space-y-6 pt-6 border-t border-white/5">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">¿Qué es una Skill?</span>
+                    <h2 className="text-lg md:text-xl font-bold text-white uppercase font-display leading-none">Un archivo SKILL.md en una carpeta</h2>
+                  </div>
+                  <p className="text-xs text-neutral-400 leading-relaxed font-sans m-0">
+                    Una skill de Claude es un archivo de Markdown llamado <strong className="text-white">SKILL.md</strong> con dos partes: un <strong className="text-amber-400 font-mono">frontmatter</strong> en YAML con <code>name</code> y <code>description</code>, y un <strong className="text-amber-400 font-mono">cuerpo</strong> con las instrucciones que el agente sigue. El campo más importante es <code>description</code>: funciona como gatillo. Si dice "Úsala cuando quieras redactar un cold email", Claude la activa de forma automática cuando tu instrucción calza con esa tarea.
+                  </p>
+
+                  <div className="p-4 bg-[#07070a] border border-white/5 rounded-2xl space-y-2">
+                    <div className="flex bg-[#030305] justify-between items-center py-1.5 px-3 rounded-lg border border-white/5">
+                      <span className="text-[10px] font-sans font-extrabold text-neutral-400 uppercase">Ejemplo mínimo de SKILL.md</span>
+                      <button 
+                        onClick={() => handleCopy(`---\nname: arquitecto-de-hilos\ndescription: Úsala cuando quieras convertir un tema, artículo o idea en un hilo de X.\n---\n\nEscribes hilos de X que la gente guarda.`, "exMin")}
+                        className="px-2 py-0.5 bg-neutral-800 text-[9px] hover:bg-neutral-700 rounded text-neutral-200 transition font-sans font-black cursor-pointer"
+                      >
+                        {copiedStates["exMin"] ? "✓ Copiado" : "Copiar"}
+                      </button>
+                    </div>
+                    <pre className="p-2.5 text-[11px] text-neutral-400 leading-relaxed overflow-x-auto font-mono whitespace-pre-wrap rounded bg-black/20">
+{`---
+name: arquitecto-de-hilos
+description: Úsala cuando quieras convertir un tema, artículo o idea en un hilo de X.
+---
+
+Escribes hilos de X que la gente guarda.`}
+                    </pre>
+                  </div>
+                </div>
+
+                {/* INSTALLATION FLOW */}
+                <div className="space-y-6 pt-6 border-t border-white/5">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Superficies admitidas</span>
+                    <h2 className="text-lg md:text-xl font-bold text-white uppercase font-display leading-none">Cómo instalar una skill en 5 minutos</h2>
+                  </div>
+
+                  {/* TABS SELECTOR */}
+                  <div className="flex border-b border-white/5 gap-1 pt-2">
+                    <button
+                      onClick={() => { setActiveInstallerTab("web"); onShowToast("📋 Guía para Claude.ai (Web / Desktop)"); }}
+                      className={`px-4 py-2 text-xs font-mono border-b-2 transition cursor-pointer ${activeInstallerTab === "web" ? "border-amber-400 text-amber-400 font-bold" : "border-transparent text-neutral-500 hover:text-white"}`}
+                    >
+                      Claude.ai (Web / Desktop)
+                    </button>
+                    <button
+                      onClick={() => { setActiveInstallerTab("cli"); onShowToast("📋 Guía para Claude Code (CLI)"); }}
+                      className={`px-4 py-2 text-xs font-mono border-b-2 transition cursor-pointer ${activeInstallerTab === "cli" ? "border-amber-400 text-amber-400 font-bold" : "border-transparent text-neutral-500 hover:text-white"}`}
+                    >
+                      Claude Code (CLI)
+                    </button>
+                    <button
+                      onClick={() => { setActiveInstallerTab("git"); onShowToast("📋 Guía para Equipos (Git / Repo)"); }}
+                      className={`px-4 py-2 text-xs font-mono border-b-2 transition cursor-pointer ${activeInstallerTab === "git" ? "border-amber-400 text-amber-400 font-bold" : "border-transparent text-neutral-500 hover:text-white"}`}
+                    >
+                      Equipo / Repo
+                    </button>
+                  </div>
+
+                  {/* TAB OUTPUTS */}
+                  {activeInstallerTab === "web" && (
+                    <div className="space-y-4 animate-fade-in">
+                      <ol className="space-y-4 text-xs font-sans">
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 1: Crea la carpeta</strong>
+                          <p className="text-neutral-400 m-0">En tu disco local, crea una carpeta con el nombre de la skill (ej. <code className="text-amber-400 font-mono">arquitecto-de-hilos</code>).</p>
+                        </li>
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 2: Pega el SKILL.md</strong>
+                          <p className="text-neutral-400 m-0">Copia el contenido del bloque de cualquier skill deseada, crea un archivo de texto plano llamado <code className="text-amber-400 font-mono">SKILL.md</code> dentro de la carpeta y pega las instrucciones.</p>
+                        </li>
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 3: Comprime como ZIP</strong>
+                          <p className="text-neutral-400 m-0">Comprime la carpeta en formato ZIP para generar un archivo con el mismo nombre.</p>
+                        </li>
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 4: Sube en tu cuenta de Claude</strong>
+                          <p className="text-neutral-400 m-0">Entra a <strong className="text-white">claude.ai → Settings → Skills → Add Skill</strong> y sube el archivo ZIP. Claude la activará automáticamente en cada conversación que cumpla con el gatillo.</p>
+                        </li>
+                      </ol>
+                    </div>
+                  )}
+
+                  {activeInstallerTab === "cli" && (
+                    <div className="space-y-4 animate-fade-in text-xs">
+                      <div className="p-4 bg-[#07070a] border border-white/5 rounded-2xl space-y-3">
+                        <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-500 block">Comando de terminal rápida</span>
+                        <div className="flex bg-[#030305] border border-white/5 px-3 py-2 rounded-xl justify-between items-center font-mono">
+                          <code className="text-amber-400 text-xs overflow-x-auto whitespace-nowrap mr-2 select-all">mkdir -p ~/.claude/skills/arquitecto-de-hilos && touch ~/.claude/skills/arquitecto-de-hilos/SKILL.md</code>
+                          <button 
+                            onClick={() => handleCopy("mkdir -p ~/.claude/skills/arquitecto-de-hilos && touch ~/.claude/skills/arquitecto-de-hilos/SKILL.md", "cliIns")}
+                            className="text-neutral-400 hover:text-amber-400 text-xs transition px-2 py-1 h-fit cursor-pointer font-bold font-sans"
+                          >
+                            {copiedStates["cliIns"] ? "Copiado" : "Copiar"}
+                          </button>
+                        </div>
+                      </div>
+
+                      <ol className="space-y-4 text-xs font-sans mt-3">
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 1: Corre el comando anterior</strong>
+                          <p className="text-neutral-400 m-0">Esto creará la estructura global de folders para tu terminal de Claude Code.</p>
+                        </li>
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 2: Rellena el archivo SKILL.md</strong>
+                          <p className="text-neutral-400 m-0">Abre el archivo creado en tu editor de código o consola y pega las instrucciones de la skill.</p>
+                        </li>
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 3: Listo en la próxima sesión</strong>
+                          <p className="text-neutral-400 m-0">En tu próxima terminal de Claude Code, las nuevas capacidades se cargarán automáticamente.</p>
+                        </li>
+                      </ol>
+                    </div>
+                  )}
+
+                  {activeInstallerTab === "git" && (
+                    <div className="space-y-4 animate-fade-in">
+                      <ol className="space-y-4 text-xs font-sans">
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 1: Crea las carpetas en el repositorio</strong>
+                          <p className="text-neutral-400 m-0">En la raíz del proyecto Git de tu equipo, crea el directorio de configuración <code className="text-amber-400 font-mono">.claude/skills/&lt;nombre_skill&gt;/</code>.</p>
+                        </li>
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 2: Pon las instrucciones</strong>
+                          <p className="text-neutral-400 m-0">Crea el archivo <code className="text-amber-400 font-mono">SKILL.md</code> dentro de ese folder local y guarda tus pautas de automatización.</p>
+                        </li>
+                        <li className="p-4 bg-neutral-950/50 rounded-2xl border border-white/5 space-y-1">
+                          <strong className="text-white block font-sans text-xs">Paso 3: Haz Commit & Push</strong>
+                          <p className="text-neutral-400 m-0">Sube tus cambios a Git. Cuando un compañero de software clone el repositorio de tu proyecto y use Claude, la skill ya vendrá integrada en el repositorio.</p>
+                        </li>
+                      </ol>
+
+                      <div className="p-4 border border-dashed border-amber-500/35 bg-neutral-900/40 rounded-2xl text-left">
+                        <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                          Añadir skills a Git es la forma más rápida de que un equipo entero use las mismas instrucciones técnicas. Los SKILL.md en Git se pueden auditar con pull requests como cualquier otro archivo de código.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* INTERACTIVE SKILLS LIBRARY */}
+                <div id="skills-library-indicator" className="space-y-6 pt-6 border-t border-white/5">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Biblioteca de Skills de Wentix</span>
+                    <h2 className="text-lg md:text-xl font-bold text-white uppercase font-display leading-none">Explora las 40 Skills de Alto Rendimiento</h2>
+                  </div>
+
+                  {/* SEARCH & FILTERS BAR */}
+                  <div className="flex flex-col md:flex-row gap-3 pt-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                      <input
+                        type="text"
+                        value={skillsSearch}
+                        onChange={(e) => setSkillsSearch(e.target.value)}
+                        placeholder="Buscar entre las 40 skills por título, descripción, gatillo o código..."
+                        className="w-full bg-neutral-950 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400 font-sans"
+                      />
+                      {skillsSearch && (
+                        <button
+                          onClick={() => setSkillsSearch("")}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white font-sans text-xs cursor-pointer bg-transparent border-0 font-bold"
+                        >
+                          Limpiar
+                        </button>
+                      )}
+                    </div>
+
+                    {/* SELECT CATEGORY PILLS */}
+                    <div className="flex gap-1 overflow-x-auto pb-1 max-w-full">
+                      <button
+                        onClick={() => { setActiveSkillCategory("todos"); onShowToast("🔍 Mostrando todas las categorías"); }}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-mono whitespace-nowrap transition cursor-pointer select-none ${activeSkillCategory === "todos" ? "bg-amber-400 text-black font-bold" : "bg-neutral-950 border border-white/5 text-neutral-400 hover:text-white"}`}
+                      >
+                        Todos
+                      </button>
+                      {SKILLS_CATEGORIES.map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={() => { setActiveSkillCategory(cat.id); onShowToast(`🔍 Categoría: ${cat.name}`); }}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-mono whitespace-nowrap transition cursor-pointer select-none ${activeSkillCategory === cat.id ? "bg-amber-400 text-black font-bold" : "bg-neutral-950 border border-white/5 text-neutral-400 hover:text-white"}`}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SKILLS CONTAINER */}
+                  <div className="space-y-8 pt-4">
+                    {(() => {
+                      const filteredCategories = SKILLS_CATEGORIES.map(category => {
+                        const matchesCategory = activeSkillCategory === "todos" || activeSkillCategory === category.id;
+                        if (!matchesCategory) return { ...category, skills: [] };
+
+                        const filteredSkills = category.skills.filter(skill => {
+                          const query = skillsSearch.toLowerCase();
+                          return skill.name.toLowerCase().includes(query) || 
+                                 skill.description.toLowerCase().includes(query) || 
+                                 skill.body.toLowerCase().includes(query);
+                        });
+
+                        return {
+                          ...category,
+                          skills: filteredSkills
+                        };
+                      }).filter(category => category.skills.length > 0);
+
+                      if (filteredCategories.length > 0) {
+                        return filteredCategories.map((cat) => (
+                          <div key={cat.id} className="space-y-4">
+                            <div className="flex items-center gap-3 border-b border-white/5 pb-2">
+                              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-950/20 text-amber-400 border border-amber-800/30 text-xs font-mono font-bold">
+                                {cat.num}
+                              </span>
+                              <div className="text-left">
+                                <h3 className="text-sm font-black text-white uppercase font-display tracking-wider leading-none m-0">
+                                  {cat.name}
+                                </h3>
+                                <span className="text-[10px] text-neutral-500 font-mono">
+                                  {cat.skills.length} skills encontradas
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {cat.skills.map((skill) => {
+                                const isExpanded = expandedSkillId === skill.id;
+                                const diffColor = 
+                                  skill.difficulty === "Principiante" ? "text-amber-400 border-amber-500/20 bg-amber-950/10" :
+                                  skill.difficulty === "Intermedio" ? "text-cyan-400 border-cyan-500/20 bg-cyan-950/10" :
+                                  "text-purple-400 border-purple-500/20 bg-purple-950/10";
+
+                                return (
+                                  <div 
+                                    key={skill.id} 
+                                    className={`p-5 rounded-2xl border text-left flex flex-col justify-between transition-all self-start ${isExpanded ? "bg-neutral-950 border-amber-500/25 shadow-lg shadow-amber-500/5 col-span-1 md:col-span-2" : "bg-neutral-950/60 hover:bg-neutral-950 border-white/5 hover:border-amber-500/10"}`}
+                                  >
+                                    <div>
+                                      <div className="flex justify-between items-start gap-2">
+                                        <span className="text-2xs font-mono text-amber-400 font-black tracking-widest uppercase">
+                                          Skill {skill.num}
+                                        </span>
+                                        <span className={`text-[9px] font-mono border rounded-full px-2 py-0.5 font-bold uppercase select-none ${diffColor}`}>
+                                          {skill.difficulty}
+                                        </span>
+                                      </div>
+                                      <h4 className="text-sm font-bold text-white uppercase font-display leading-tight mt-1.5 m-0">
+                                        {skill.name}
+                                      </h4>
+                                      <p className="text-xs text-neutral-400 leading-normal mt-2 font-sans m-0">
+                                        {skill.description}
+                                      </p>
+                                    </div>
+
+                                    <div className="mt-4 pt-4 border-t border-white/5 flex flex-col space-y-3">
+                                      <div className="flex justify-between items-center text-xs">
+                                        <button
+                                          onClick={() => setExpandedSkillId(isExpanded ? null : skill.id)}
+                                          className="text-amber-400 font-bold hover:text-amber-300 flex items-center gap-1 cursor-pointer font-sans h-fit py-1 bg-transparent border-0"
+                                        >
+                                          <span>{isExpanded ? "Ocultar SKILL.md" : "Ver SKILL.md"}</span>
+                                          <ChevronDown className={`w-3.5 h-3.5 transform transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                        </button>
+                                        
+                                        <button
+                                          onClick={() => handleCopy(skill.body, skill.id)}
+                                          className="px-3 py-1 bg-neutral-900 border border-white/5 rounded-lg hover:bg-neutral-800 text-white font-mono select-none h-fit hover:border-amber-500/20 transition cursor-pointer"
+                                        >
+                                          {copiedStates[skill.id] ? "✓ Copiado" : "Copiar Código"}
+                                        </button>
+                                      </div>
+
+                                      {isExpanded && (
+                                        <div className="space-y-2 animate-slide-up mt-2">
+                                          <div className="flex justify-between items-center bg-[#07070a] px-3 py-1.5 rounded-t-lg border-t border-x border-white/5 font-mono text-[9px] text-neutral-400">
+                                            <span>FORMATO SKILL.md</span>
+                                            <button 
+                                              onClick={() => handleCopy(skill.body, `inner-${skill.id}`)}
+                                              className="text-[9px] text-neutral-400 hover:text-amber-400 cursor-pointer bg-transparent border-0 font-bold"
+                                            >
+                                              {copiedStates[`inner-${skill.id}`] ? "✓ Copiado" : "Copiar"}
+                                            </button>
+                                          </div>
+                                          <pre className="p-4 text-xs text-neutral-300 font-mono overflow-x-auto leading-relaxed max-h-[400px] bg-[#030305] border border-white/5 rounded-b-lg whitespace-pre-wrap select-text m-0">
+                                            {skill.body}
+                                          </pre>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ));
+                      } else {
+                        return (
+                          <div className="py-12 bg-neutral-950 border border-white/5 rounded-3xl text-center space-y-2">
+                            <p className="text-xs text-neutral-500 font-mono m-0">No se encontraron skills que coincidan con tu búsqueda.</p>
+                            <button
+                              onClick={() => { setSkillsSearch(""); setActiveSkillCategory("todos"); }}
+                              className="px-3.5 py-1.5 bg-neutral-900 text-xs text-white rounded-xl hover:bg-neutral-800 cursor-pointer border-0"
+                            >
+                              Restablecer filtros
+                            </button>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </div>
+                </div>
+
+                {/* PACKS & RECOMMENDATIONS */}
+                <div className="space-y-6 pt-6 border-t border-white/5 text-left">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Adopción inteligente</span>
+                    <h2 className="text-lg md:text-xl font-bold text-white uppercase font-display leading-none">No instales las 40: Elige tu Pack ideal</h2>
+                  </div>
+                  <p className="text-xs text-neutral-400 leading-normal font-sans m-0">
+                    La regla de oro para adoptar automatización: elige las 5 que tu día a día de verdad usa, instálalas en un solo día, y úsalas por dos semanas consecutivas. Si alguna no te funciona, la descartas y la cambias por otra del catálogo.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {SKILLS_PACKS.map((pack) => (
+                      <div key={pack.name} className="p-5 bg-neutral-950 border border-white/5 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-mono text-amber-400 block font-bold uppercase">{pack.name}</span>
+                          <p className="text-xs text-neutral-400 leading-normal font-sans m-0">{pack.description}</p>
+                        </div>
+                        <ul className="text-xs leading-relaxed font-sans space-y-1 pl-0 list-none pt-2 border-t border-white/5 m-0">
+                          {pack.skillsList.map((skillRef) => (
+                            <li 
+                              key={skillRef} 
+                              onClick={() => {
+                                const plainName = skillRef.split(" · ")[1] || skillRef;
+                                setSkillsSearch(plainName);
+                                setActiveSkillCategory("todos");
+                                onShowToast(`🔍 Buscando: ${plainName}`);
+                                const element = document.getElementById("skills-library-indicator");
+                                if (element) {
+                                  element.scrollIntoView({ behavior: "smooth" });
+                                }
+                              }}
+                              className="text-neutral-400 hover:text-amber-400 cursor-pointer flex items-center gap-1 font-mono transition-colors text-[10px]"
+                            >
+                              <span className="text-amber-500 font-bold">&#8250;</span>
+                              <span>{skillRef}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* THE 30 DAYS PLAN */}
+                <div id="skills-library-indicator" className="space-y-6 pt-6 border-t border-white/5 text-left">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Metodología de incorporación</span>
+                    <h2 className="text-lg md:text-xl font-bold text-white uppercase font-display leading-none">Tu Plan de Implementación de 30 Días</h2>
+                  </div>
+                  <p className="text-xs text-neutral-400 leading-normal font-sans m-0">
+                    Claude es el motor. Las skills son el volante. Sin skills, estás pisando el acelerador esperando llegar a algún lado bueno de forma fortuita. La buena noticia: tomar el volante te costará menos de 5 minutos por skill siguiendo este flujo de 30 días.
+                  </p>
+
+                  <div className="border border-white/5 rounded-2xl overflow-hidden bg-neutral-950 font-sans">
+                    <table className="w-full text-xs text-left text-neutral-400 border-collapse">
+                      <thead>
+                        <tr className="bg-[#0b0b10] border-b border-white/5 text-[10px] font-mono text-amber-400 uppercase tracking-wider">
+                          <th className="p-3.5 font-bold">Cuándo</th>
+                          <th className="p-3.5 font-bold">Acción o Instrucción Concreta</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {PLAN_DAYS.map((p, idx) => (
+                          <tr key={idx} className="border-b border-white/5 hover:bg-neutral-900/10">
+                            <td className="p-3.5 font-bold text-white whitespace-nowrap font-mono">{p.day}</td>
+                            <td className="p-3.5 leading-relaxed text-neutral-300 font-sans">{p.task}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="p-5 border border-dashed border-amber-500/35 bg-neutral-900/40 rounded-2xl relative text-left">
+                    <span className="absolute -top-3 left-4 px-2 bg-neutral-950 border border-amber-500/30 rounded text-amber-400 font-mono text-[9px] font-bold uppercase tracking-widest text-[10px]">Wentix • Clave</span>
+                    <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                      <strong>Si llegaste hasta aquí pero todavía no abriste la primera carpeta:</strong> Abre tu terminal de Claude Code, pega el primer comando de la sección de instalación, copia el SKILL.md de la skill 01 y termina la jugada. La diferencia entre guardar esta guía y mejorar tu semana de trabajo se decide en tus próximos 5 minutos de acción real.
+                    </p>
+                  </div>
+                </div>
+
+                {/* FAQs */}
+                <div className="space-y-6 pt-6 border-t border-white/5 text-left">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Resolución de dudas</span>
+                    <h2 className="text-lg md:text-xl font-bold text-white uppercase font-display leading-none">Preguntas Frecuentes sobre las Skills</h2>
+                  </div>
+
+                  <div className="space-y-3">
+                    {SKILLS_FAQS.map((faq, idx) => {
+                      const isFaqExpanded = expandedFaq === idx;
+                      return (
+                        <div key={idx} className="p-4 bg-neutral-950/60 hover:bg-neutral-950 border border-white/5 rounded-2xl transition">
+                          <button
+                            onClick={() => { setExpandedFaq(isFaqExpanded ? null : idx); onShowToast(`💬 Pregunta: ${faq.q}`); }}
+                            className="w-full flex justify-between items-center text-left text-xs font-bold text-white uppercase font-display leading-relaxed cursor-pointer bg-transparent border-0"
+                          >
+                            <span className="text-neutral-200">{faq.q}</span>
+                            <ChevronDown className={`w-4 h-4 text-amber-400 shrink-0 transform transition-transform ${isFaqExpanded ? "rotate-180" : ""}`} />
+                          </button>
+                          {isFaqExpanded && (
+                            <p className="text-xs text-neutral-400 leading-relaxed mt-3 font-sans pb-1 m-0">
+                              {faq.a}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* BOTTOM SWITCH CONTROLS */}
+                <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row gap-3 justify-between items-center text-xs font-sans">
+                  <button 
+                    onClick={() => setSelectedGuideId(null)}
+                    className="px-4 py-2 bg-neutral-900 border border-white/10 text-neutral-300 rounded-xl hover:bg-neutral-800 transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Volver al Catálogo</span>
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setSelectedGuideId("que-automatizar");
+                      onShowToast("🔄 Saltando a la primera lección...");
+                    }}
+                    className="px-4 py-2 bg-amber-500 text-black font-bold rounded-xl hover:bg-amber-400 shadow-md shadow-amber-500/15 transition flex items-center gap-1.5 cursor-pointer border-0"
+                  >
+                    <span>Volver al inicio</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             )}

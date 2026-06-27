@@ -30,6 +30,7 @@ import {
   Layers,
   Sparkles,
   ChevronRight,
+  ChevronDown,
   Info,
   DollarSign,
   Star,
@@ -58,7 +59,6 @@ import {
   GRATIS_STACK 
 } from "./data";
 import { AITool, GitHubRepo, PromptItem, WorkflowItem, ResourceArticle } from "./types";
-import OrbiMascot from "./components/OrbiMascot";
 import DonationCenter from "./components/DonationCenter";
 import ViralGrowthSystem from "./components/ViralGrowthSystem";
 import { WentixLogo } from "./components/WentixLogo";
@@ -478,6 +478,15 @@ export default function App() {
     timestamp: string;
     category?: string;
   } | null>(null);
+
+  // Stack IA + Automatización interactive states (detailed github view)
+  const [stackDomain, setStackDomain] = useState("wentix-stack.com");
+  const [stackOllamaGPU, setStackOllamaGPU] = useState(false);
+  const [activeStackTab, setActiveStackTab] = useState<"overview" | "compose" | "calculator" | "guide">("overview");
+  const [calcSeats, setCalcSeats] = useState(5);
+  const [calcZapierTasks, setCalcZapierTasks] = useState(5000);
+  const [copiedStackCompose, setCopiedStackCompose] = useState(false);
+  const [expandedStackFaq, setExpandedStackFaq] = useState<number | null>(null);
 
   // Active floating details modal data (ventana aparte)
   const [selectedDetailItem, setSelectedDetailItem] = useState<{
@@ -2615,9 +2624,8 @@ export default function App() {
           <div>
             <span className="block font-bold text-white mb-3 tracking-wider font-display text-[10px] uppercase">Herramientas</span>
             <ul className="space-y-2">
-              <li><a href="#admin-cms-scrapers" className="hover:text-cyan-400 transition-colors text-[11px]">Scraper IA en vivo</a></li>
-              <li><a href="#stack-gratis" className="hover:text-cyan-400 transition-colors text-[11px]">Stack de Emprendimiento</a></li>
-              <li><span className="text-[10px] bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded font-mono">WEB APP & APK ANDROID READY</span></li>
+              <li><a href="#stack-gratis" className="hover:text-cyan-400 transition-colors text-[11px]">Stack de Emprendimiento Wentix</a></li>
+              <li><span className="text-[10px] bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded font-mono">WENTIX WEB APP & APK READY</span></li>
             </ul>
           </div>
         </div>
@@ -2626,15 +2634,8 @@ export default function App() {
           <div>
             <span>© 2026 Wentix AI. Desarrollado con tecnología de procesamiento de última generación.</span>
           </div>
-          <div className="flex gap-4">
-            <span className="text-neutral-400 font-bold font-mono">ORBI Companion v1.02</span>
-            <span>Estilo: Linear + Vercel + OpenAI premium</span>
-          </div>
         </div>
       </footer>
-
-      {/* 10. FLOATING MASCOT INTERACTIVE COMPANION COMPONENT */}
-      <OrbiMascot userContext={{ currentCategory: selectedCategory, activeTab, bookmarkedCount: bookmarks.length }} />
 
       {/* STELLAR SLIDING SIMULATED OS PUSH NOTIFICATION OVERLAY */}
       {simulatedAlert && (
@@ -2798,6 +2799,770 @@ export default function App() {
                   <div>
                     <span className="block text-[10px] font-mono text-neutral-500">Forks del Proyecto</span>
                     <strong className="text-neutral-100 mt-1 block text-xs sm:text-sm">{selectedDetailItem.item.forks?.toLocaleString() || "N/A"}</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* REPO-SPECIFIC EXTENDED GUIDES (E.G. OPENWA FULL GUIDE) */}
+              {selectedDetailItem.type === "repo" && selectedDetailItem.item.id === "github-openwa" && (
+                <div className="space-y-8 border-t border-white/5 pt-6 text-left text-neutral-200">
+                  <div className="space-y-2">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-950/20 border border-purple-800/30 text-purple-400 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+                      <span>Guía de Integración Local y VPS • Para Principiantes</span>
+                    </div>
+                    <h3 className="text-lg font-black text-white font-mono uppercase tracking-tight">
+                      OpenWA: MANUAL DE INSTALACIÓN Y CONSUMO API
+                    </h3>
+                    <p className="text-xs text-neutral-300 leading-relaxed max-w-3xl font-sans">
+                      OpenWA es una API de WhatsApp <strong className="text-white">gratuita, open source y auto-hospedada</strong>. La instalas en tu propio servidor (VPS o local), le mandas mensajes por API REST y todo se queda bajo tu control, sin depender de intermediarios de pago ni incurrir en suscripciones mensuales.
+                    </p>
+                  </div>
+
+                  {/* SECTION 1: QUE ES */}
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                        <strong className="text-purple-500 font-sans">01</strong> • Qué es OpenWA
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                      Si alguna vez has intentado conectar WhatsApp a tu negocio —para calificar leads, enviar recordatorios o integrar soporte inteligente— seguro te topaste con la barrera de las tarifas abusivas. <strong className="text-white">OpenWA resuelve esto de raíz</strong>. Consiste en un sistema auto-hospedado que actúa como intermediario local y te provee endpoints RESTful limpios, webhooks para recibir mensajes en tiempo real y una interfaz gráfica (dashboard) de control.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-1">
+                        <span className="text-xs font-bold text-purple-400 font-sans uppercase">Soberanía de Datos</span>
+                        <p className="text-[11px] text-neutral-400 leading-relaxed m-0 font-sans">
+                          Tus conversaciones, contactos e imágenes jamás cruzan por servidores externos ajenos. Al correr en tu propia infraestructura, garantizas la privacidad total de tus clientes.
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-1">
+                        <span className="text-xs font-bold text-purple-400 font-sans uppercase">Cero Costos Ocultos</span>
+                        <p className="text-[11px] text-neutral-400 leading-relaxed m-0 font-sans">
+                          A diferencia de la API de Cloud oficial de Meta, con OpenWA puedes enviar millones de mensajes mensuales sin pagar un solo centavo más que el costo básico de tu VPS.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: QUE INCLUYE Y STACK */}
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                        <strong className="text-purple-500 font-sans">02</strong> • Características y Arquitectura
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-left">
+                      <div className="p-3 bg-neutral-950 border border-white/5 rounded-xl space-y-1.5">
+                        <div className="font-bold text-[10px] text-white uppercase tracking-wider font-mono">⚡ El Núcleo</div>
+                        <ul className="text-[10px] text-neutral-400 space-y-0.5 font-sans list-disc list-inside">
+                          <li>API REST unificada</li>
+                          <li>Multi-sesión activa</li>
+                          <li>Swagger Docs</li>
+                          <li>Web Dashboard</li>
+                        </ul>
+                      </div>
+
+                      <div className="p-3 bg-neutral-950 border border-white/5 rounded-xl space-y-1.5">
+                        <div className="font-bold text-[10px] text-white uppercase tracking-wider font-mono">💬 Canales</div>
+                        <ul className="text-[10px] text-neutral-400 space-y-0.5 font-sans list-disc list-inside">
+                          <li>Mensajería de Texto</li>
+                          <li>Fotos, Audio y PDF</li>
+                          <li>Manejo de Reacciones</li>
+                          <li>Confirmaciones</li>
+                        </ul>
+                      </div>
+
+                      <div className="p-3 bg-neutral-950 border border-white/5 rounded-xl space-y-1.5">
+                        <div className="font-bold text-[10px] text-white uppercase tracking-wider font-mono">🛠️ Avanzado</div>
+                        <ul className="text-[10px] text-neutral-400 space-y-0.5 font-sans list-disc list-inside">
+                          <li>Gestión de Grupos</li>
+                          <li>Canales de Difusión</li>
+                          <li>Soporte de Proxies</li>
+                          <li>Límites de Envío</li>
+                        </ul>
+                      </div>
+
+                      <div className="p-3 bg-neutral-950 border border-white/5 rounded-xl space-y-1.5">
+                        <div className="font-bold text-[10px] text-white uppercase tracking-wider font-mono">📦 Infraestructura</div>
+                        <ul className="text-[10px] text-neutral-400 space-y-0.5 font-sans list-disc list-inside">
+                          <li>SQL / Postgres</li>
+                          <li>Caché interno Redis</li>
+                          <li>Almacenamiento S3</li>
+                          <li>Health status check</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-2">
+                      <h4 className="text-[10px] font-bold text-white uppercase tracking-wider font-mono m-0">Stack Tecnológico Principal:</h4>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {["Node.js v20", "NestJS v11", "TypeScript 5", "Docker & Compose", "PostgreSQL", "Redis", "MinIO / AWS S3"].map((tech, idx) => (
+                          <span key={idx} className="px-2 py-0.5 bg-neutral-900 border border-white/10 rounded text-[9px] font-mono text-neutral-300">
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 3: COMPARATIVA */}
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                        <strong className="text-purple-500 font-sans">03</strong> • Comparativa Comercial
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto border border-white/5 rounded-2xl">
+                      <table className="w-full text-left border-collapse font-sans text-xs">
+                        <thead>
+                          <tr className="bg-neutral-950 border-b border-white/10">
+                            <th className="p-3 text-white font-mono uppercase text-[9px] tracking-wider text-left">Función</th>
+                            <th className="p-3 text-purple-400 font-mono uppercase text-[9px] tracking-wider text-center bg-purple-500/5">OpenWA</th>
+                            <th className="p-3 text-neutral-400 font-mono uppercase text-[9px] tracking-wider text-center">API Cloud Meta</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 text-neutral-300 bg-neutral-900/10 text-[11px]">
+                          <tr>
+                            <td className="p-3 font-semibold text-white">Precio Inicial</td>
+                            <td className="p-3 text-center text-purple-400 font-mono font-bold bg-purple-500/5">Gratis total</td>
+                            <td className="p-3 text-center">Pago por mensaje</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 font-semibold text-white">Código Abierto</td>
+                            <td className="p-3 text-center text-purple-400 font-semibold bg-purple-500/5">✓ Sí (MIT)</td>
+                            <td className="p-3 text-center text-neutral-500">✗ No</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 font-semibold text-white">Soberanía Máxima</td>
+                            <td className="p-3 text-center text-purple-400 bg-purple-500/5">✓ Local o VPS</td>
+                            <td className="p-3 text-center text-neutral-500">✗ En nube de Meta</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 font-semibold text-white">Multi-sesión</td>
+                            <td className="p-3 text-center text-purple-400 bg-purple-500/5">✓ Sin límite</td>
+                            <td className="p-3 text-center">✓ Soportado</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* SECTION 4: INSTALACION Y USO */}
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                        <strong className="text-purple-500 font-sans">04</strong> • Guía de Despliegue y Pruebas
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                      La forma más aconsejada, limpia e inmediata de arrancar el servidor en producción o local es utilizando <strong className="text-white">Docker Compose</strong>. Esto levantará automáticamente el backend, la base de datos y la interfaz web.
+                    </p>
+
+                    <div className="space-y-4">
+                      {/* INSTALACION DOCKER */}
+                      <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3 font-sans w-full">
+                        <div className="flex items-center justify-between font-sans">
+                          <h4 className="text-xs font-bold text-white uppercase font-mono leading-tight m-0">Instalar con Docker Compose:</h4>
+                          <button 
+                            onClick={() => copyText("git clone https://github.com/rmyndharis/OpenWA.git\ncd OpenWA\ndocker compose up -d", "Comando Docker")} 
+                            className="px-2 py-0.5 bg-neutral-850 text-[9px] text-white rounded font-mono hover:bg-neutral-705 transition cursor-pointer"
+                          >
+                            Copiar Código
+                          </button>
+                        </div>
+                        <pre className="p-3 text-[10px] text-neutral-400 overflow-x-auto max-h-5s leading-relaxed whitespace-pre font-mono bg-black/20 rounded-lg">
+{`# 1. Clona el repositorio oficial (fork activo)
+git clone https://github.com/rmyndharis/OpenWA.git
+
+# 2. Entra al directorio
+cd OpenWA
+
+# 3. Levanta los contenedores en modo detached
+docker compose up -d`}
+                        </pre>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-3 bg-neutral-955/70 border border-white/5 rounded-xl text-left space-y-1">
+                          <span className="font-mono text-[11px] text-purple-400">http://localhost:2886</span>
+                          <p className="text-[10px] text-neutral-400 leading-normal m-0 font-sans">
+                            <strong>Dashboard Web:</strong> Escanea el QR para habilitar tu celular en el bot.
+                          </p>
+                        </div>
+
+                        <div className="p-3 bg-neutral-955/70 border border-white/5 rounded-xl text-left space-y-1">
+                          <span className="font-mono text-[11px] text-purple-400">http://localhost:2785/api</span>
+                          <p className="text-[10px] text-neutral-400 leading-normal m-0 font-sans">
+                            <strong>Endpoints REST:</strong> La base limpia para que tus scripts y webhooks se comuniquen.
+                          </p>
+                        </div>
+
+                        <div className="p-3 bg-neutral-955/70 border border-white/5 rounded-xl text-left space-y-1">
+                          <span className="font-mono text-[11px] text-purple-400">/api/docs</span>
+                          <p className="text-[10px] text-neutral-400 leading-normal m-0 font-sans">
+                            <strong>Swagger Docs:</strong> Testea cada webhook y endpoint directamente.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* ENVIAR PRIMER MENSAJE */}
+                      <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl text-left space-y-3 font-sans w-full">
+                        <div className="flex items-center justify-between font-sans">
+                          <h4 className="text-xs font-bold text-white uppercase font-mono leading-tight m-0">Enviar un Mensaje de Prueba (cURL):</h4>
+                          <button 
+                            onClick={() => copyText(`curl -X POST http://localhost:2785/api/sessions/mi-bot/messages/send-text \\\n  -H "Content-Type: application/json" \\\n  -H "X-API-Key: TU_API_KEY" \\\n  -d '{\n    "chatId": "5215512345678@c.us",\n    "text": "Hola desde OpenWA 🚀"\n  }'`, "cURL")} 
+                            className="px-2 py-0.5 bg-neutral-800 text-[9px] text-white rounded font-mono hover:bg-neutral-700 transition cursor-pointer"
+                          >
+                            Copiar cURL
+                          </button>
+                        </div>
+                        <pre className="p-3 text-[10px] text-neutral-400 overflow-x-auto max-h-5s leading-relaxed whitespace-pre font-mono bg-black/20 rounded-lg">
+{`curl -X POST http://localhost:2785/api/sessions/mi-bot/messages/send-text \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: TU_API_KEY" \\
+  -d '{
+    "chatId": "5215512345678@c.us",
+    "text": "Hola desde OpenWA 🚀"
+  }'`}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* FAQ */}
+                  <div className="space-y-4 border-t border-white/5 pt-6">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                      Preguntas Frecuentes • FAQs
+                    </span>
+
+                    <div className="space-y-3 text-left">
+                      <div className="p-3.5 bg-neutral-950 rounded-xl space-y-1 border border-white/5">
+                        <span className="text-[11px] font-bold text-purple-400 font-mono block">¿Es seguro para mis números de negocio?</span>
+                        <p className="text-[10.5px] text-neutral-400 leading-relaxed m-0 font-sans">
+                          Aconsejamos respetar tiempos para prevenir bloqueos y habilitar políticas de límite integradas en OpenWA.
+                        </p>
+                      </div>
+
+                      <div className="p-3.5 bg-neutral-950 rounded-xl space-y-1 border border-white/5">
+                        <span className="text-[11px] font-bold text-purple-400 font-mono block">¿Cómo lo conecto con Claude o agentes?</span>
+                        <p className="text-[10.5px] text-neutral-400 leading-relaxed m-0 font-sans">
+                          Al proveer OpenAPI standard en /api/docs, puedes copiar la especificación y dárselas a Claude Code u otros agentes para generar herramientas MCP en segundos.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RESOURCES AND LINKS */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4">
+                    <a href="https://github.com/rmyndharis/OpenWA" target="_blank" rel="noopener noreferrer" className="p-3 bg-neutral-950 hover:bg-neutral-900 border border-white/5 hover:border-purple-500/35 rounded-xl text-left block transition-all group">
+                      <strong className="text-[11px] font-bold text-white group-hover:text-purple-400 transition-colors uppercase font-mono block mb-1">Repositorio Original</strong>
+                      <p className="text-[10px] text-neutral-400 leading-relaxed m-0 font-sans">
+                        Código fuente, commits y control directo del core del software.
+                      </p>
+                    </a>
+
+                    <a href="https://github.com/rmyndharis/OpenWA/blob/main/docs/README.md" target="_blank" rel="noopener noreferrer" className="p-3 bg-neutral-950 hover:bg-neutral-900 border border-white/5 hover:border-purple-500/35 rounded-xl text-left block transition-all group">
+                      <strong className="text-[11px] font-bold text-white group-hover:text-purple-400 transition-colors uppercase font-mono block mb-1">Guías de Configuración</strong>
+                      <p className="text-[10px] text-neutral-400 leading-relaxed m-0 font-sans">
+                        Detalle paso a paso sobre S3 remoto, Postgres y variables avanzadas.
+                      </p>
+                    </a>
+
+                    <a href="https://www.open-wa.org/" target="_blank" rel="noopener noreferrer" className="p-3 bg-neutral-950 hover:bg-neutral-900 border border-white/5 hover:border-purple-500/35 rounded-xl text-left block transition-all group">
+                      <strong className="text-[11px] font-bold text-white group-hover:text-purple-400 transition-colors uppercase font-mono block mb-1">Sitio Web Oficial</strong>
+                      <p className="text-[10px] text-neutral-400 leading-relaxed m-0 font-sans">
+                        Noticias, comunidad de desarrollo y demo interactiva para probar.
+                      </p>
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* STACK IA + AUTOMATIZACION INTERACTIVE GUIDE FOR GITHUB REPO DETAIL VIEW */}
+              {selectedDetailItem.type === "repo" && selectedDetailItem.item.id === "github-stack-ia" && (
+                <div className="space-y-8 border-t border-white/5 pt-6 text-left text-neutral-200">
+                  <div className="space-y-2">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-950/20 border border-cyan-800/30 text-cyan-400 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-500 animate-pulse" />
+                      <span>Sustitución SaaS de Alto Rendimiento • Nivel Avanzado</span>
+                    </div>
+                    <h3 className="text-lg font-black text-white font-mono uppercase tracking-tight">
+                      Wentix Stack: IA Local + Automatización Visual + Sprints
+                    </h3>
+                    <p className="text-xs text-neutral-300 leading-relaxed max-w-3xl font-sans">
+                      Hospeda Ollama, n8n y Plane en un solo Docker Compose. Reemplaza ChatGPT Plus, Zapier y Jira/Linear para ahorrar miles de dólares al año operando de forma 100% privada y soberana.
+                    </p>
+                  </div>
+
+                  {/* TAB SELECTOR FOR STACK GUIDES */}
+                  <div className="flex border-b border-white/5 gap-1 pt-2 overflow-x-auto no-scrollbar">
+                    <button
+                      onClick={() => { setActiveStackTab("overview"); showToast("💡 Las 3 Piezas del Stack"); }}
+                      className={`px-4 py-2 text-xs font-mono border-b-2 transition cursor-pointer shrink-0 ${activeStackTab === "overview" ? "border-amber-400 text-amber-400 font-bold" : "border-transparent text-neutral-500 hover:text-white"}`}
+                    >
+                      💡 Las 3 Piezas
+                    </button>
+                    <button
+                      onClick={() => { setActiveStackTab("compose"); showToast("🐳 Docker Compose Configurator"); }}
+                      className={`px-4 py-2 text-xs font-mono border-b-2 transition cursor-pointer shrink-0 ${activeStackTab === "compose" ? "border-amber-400 text-amber-400 font-bold" : "border-transparent text-neutral-500 hover:text-white"}`}
+                    >
+                      🐳 Docker Compose
+                    </button>
+                    <button
+                      onClick={() => { setActiveStackTab("calculator"); showToast("📊 Calculadora de Ahorro SaaS"); }}
+                      className={`px-4 py-2 text-xs font-mono border-b-2 transition cursor-pointer shrink-0 ${activeStackTab === "calculator" ? "border-amber-400 text-amber-400 font-bold" : "border-transparent text-neutral-500 hover:text-white"}`}
+                    >
+                      📊 Calculadora de Ahorro
+                    </button>
+                    <button
+                      onClick={() => { setActiveStackTab("guide"); showToast("🚀 Guía de Venta e Implementación"); }}
+                      className={`px-4 py-2 text-xs font-mono border-b-2 transition cursor-pointer shrink-0 ${activeStackTab === "guide" ? "border-amber-400 text-amber-400 font-bold" : "border-transparent text-neutral-500 hover:text-white"}`}
+                    >
+                      🚀 Venta / Implementación
+                    </button>
+                  </div>
+
+                  {/* TAB 1: OVERVIEW */}
+                  {activeStackTab === "overview" && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* OLLAMA CARD */}
+                        <div className="p-5 bg-neutral-950/80 border border-white/5 rounded-2xl space-y-3">
+                          <span className="px-2 py-0.5 bg-cyan-950/40 text-cyan-400 border border-cyan-800/20 rounded text-[9px] font-mono uppercase font-black block w-fit">
+                            Reemplaza: ChatGPT Plus / APIs
+                          </span>
+                          <h4 className="text-sm font-black text-white uppercase font-mono mt-1">Ollama</h4>
+                          <p className="text-[11px] text-neutral-400 leading-relaxed font-sans mb-0">
+                            Ejecuta LLMs de forma local para chats, procesamiento de datos, clasificación y código sin llamadas de pago externas.
+                          </p>
+                          <div className="space-y-1.5 pt-2 border-t border-white/5 text-[10px] font-sans">
+                            <span className="text-neutral-500 font-mono block">Uso principal:</span>
+                            <span className="text-neutral-300">Resúmenes, bots automáticos lógicos con token coste $0.</span>
+                          </div>
+                        </div>
+
+                        {/* N8N CARD */}
+                        <div className="p-5 bg-neutral-950/80 border border-white/5 rounded-2xl space-y-3">
+                          <span className="px-2 py-0.5 bg-yellow-950/40 text-amber-400 border border-yellow-800/20 rounded text-[9px] font-mono uppercase font-black block w-fit">
+                            Reemplaza: Zapier / Make
+                          </span>
+                          <h4 className="text-sm font-black text-white uppercase font-mono mt-1">n8n</h4>
+                          <p className="text-[11px] text-neutral-400 leading-relaxed font-sans mb-0">
+                            Flujos de trabajo visuales con nodos AI nativos para sincronizar CRMs, webhooks, planillas y asistentes autónomos.
+                          </p>
+                          <div className="space-y-1.5 pt-2 border-t border-white/5 text-[10px] font-sans">
+                            <span className="text-neutral-500 font-mono block">Uso principal:</span>
+                            <span className="text-neutral-300">Disparadores automáticos, webhooks y automatización pura de tareas.</span>
+                          </div>
+                        </div>
+
+                        {/* PLANE CARD */}
+                        <div className="p-5 bg-neutral-950/80 border border-white/5 rounded-2xl space-y-3">
+                          <span className="px-2 py-0.5 bg-purple-950/40 text-purple-400 border border-purple-800/20 rounded text-[9px] font-mono uppercase font-black block w-fit">
+                            Reemplaza: Jira / Linear
+                          </span>
+                          <h4 className="text-sm font-black text-white uppercase font-mono mt-1">Plane</h4>
+                          <p className="text-[11px] text-neutral-400 leading-relaxed font-sans mb-0">
+                            Gestión ágil de proyectos con tableros Kanban, ciclos de sprints, bugs, roadmaps y control del backlog sin licencias por usuario.
+                          </p>
+                          <div className="space-y-1.5 pt-2 border-t border-white/5 text-[10px] font-sans">
+                            <span className="text-neutral-500 font-mono block">Uso principal:</span>
+                            <span className="text-neutral-300">Estructuración de épicas, organización de tickets y tareas de tu equipo.</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl space-y-2">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold block">La Ventaja Estratégica del Auto-Hospedaje</span>
+                        <p className="text-xs text-neutral-300 leading-relaxed font-sans m-0">
+                          La mayoría de las empresas gasta sumas absurdas en cargos por usuario adicional (asientos). Al consolidar este stack open-source sobre Docker Compose en tu propio VPS de alto rendimiento, logras escalabilidad ilimitada, seguridad local inquebrantable y recuperas el control absoluto de tus datos de cliente.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: DOCKER COMPOSE CONFIGURATOR */}
+                  {activeStackTab === "compose" && (
+                    <div className="space-y-5 animate-fade-in">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Despliegue unificado</span>
+                        <h4 className="text-sm font-bold text-white uppercase font-mono">Creador en Vivo de docker-compose.yml</h4>
+                        <p className="text-xs text-neutral-400 font-sans">
+                          Establece los parámetros de red y copia la receta YAML lista para levantar con un comando en consola.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl space-y-3.5">
+                          <span className="text-xs font-mono text-amber-400 block font-bold uppercase">Parámetros del Servidor</span>
+                          
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-mono text-neutral-400 uppercase block">Dominio (ej. para webhooks de n8n)</label>
+                            <input
+                              type="text"
+                              value={stackDomain}
+                              onChange={(e) => setStackDomain(e.target.value)}
+                              className="w-full bg-[#07070a] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                              placeholder="servidor.com"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5 pt-2 border-t border-white/5">
+                            <label className="text-[10px] font-mono text-neutral-400 uppercase block">Aceleración Gráfica GPU en Ollama (Nvidia)</label>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => { setStackOllamaGPU(!stackOllamaGPU); showToast(`GPU local ${!stackOllamaGPU ? "Activada" : "Desactivada"}`); }}
+                                className={`w-12 h-6 flex items-center rounded-full p-0.5 transition-colors cursor-pointer border-0 ${stackOllamaGPU ? "bg-amber-400" : "bg-neutral-800"}`}
+                              >
+                                <div className={`bg-neutral-950 w-5 h-5 rounded-full shadow-md transform transition-transform ${stackOllamaGPU ? "translate-x-6" : "translate-x-0"}`} />
+                              </button>
+                              <span className="text-xs font-sans text-neutral-300">
+                                {stackOllamaGPU ? "GPU Nvidia Activa" : "Solo CPU (VPS Básico)"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-neutral-950/40 border border-dashed border-white/5 rounded-2xl flex flex-col justify-center space-y-2.5">
+                          <span className="text-xs font-mono text-cyan-400 block font-bold">Levanta la Infraestructura</span>
+                          <ol className="text-[10px] font-sans text-neutral-400 space-y-1.5 pl-4 list-decimal leading-relaxed">
+                            <li>Entra a tu servidor virtual: <code className="text-neutral-200">ssh admin@vps-ip</code></li>
+                            <li>Crea el directorio local: <code className="text-neutral-200">mkdir -p ~/wentix-stack && cd ~/wentix-stack</code></li>
+                            <li>Abre el editor: <code className="text-neutral-200">nano docker-compose.yml</code></li>
+                            <li>Pega la receta y guarda el archivo (<code className="text-amber-400">Ctrl+O</code> y <code className="text-amber-400">Ctrl+X</code>).</li>
+                            <li>Inicia el stack: <code className="text-amber-400 font-bold">docker compose up -d</code></li>
+                          </ol>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex bg-[#07070a] px-4 py-2 rounded-t-2xl border-t border-x border-white/5 justify-between items-center font-mono">
+                          <span className="text-neutral-400 uppercase text-[9px] font-bold">docker-compose.yml</span>
+                          <button
+                            onClick={() => {
+                              const yaml = `version: '3.8'\n\nservices:\n  # Ollama - IA Local\n  ollama:\n    image: ollama/ollama:latest\n    container_name: ollama\n    ports:\n      - "11434:11434"\n    volumes:\n      - ollama_data:/root/.ollama\n    restart: unless-stopped${stackOllamaGPU ? `\n    deploy:\n      resources:\n        reservations:\n          devices:\n            - driver: nvidia\n              count: 1\n              capabilities: [gpu]` : ""}\n\n  # Base de Datos para n8n\n  postgres-n8n:\n    image: postgres:16-alpine\n    container_name: postgres-n8n\n    environment:\n      POSTGRES_USER: n8n_admin\n      POSTGRES_PASSWORD: password_super_seguro\n      POSTGRES_DB: n8n_db\n    volumes:\n      - postgres_data:/var/lib/postgresql/data\n    restart: unless-stopped\n\n  # n8n - Motor de Automatización\n  n8n:\n    image: docker.n8n.io/n8nio/n8n:latest\n    container_name: n8n\n    ports:\n      - "5678:5678"\n    environment:\n      - DB_TYPE=postgresdb\n      - DB_POSTGRESDB_HOST=postgres-n8n\n      - DB_POSTGRESDB_DATABASE=n8n_db\n      - DB_POSTGRESDB_USER=n8n_admin\n      - DB_POSTGRESDB_PASSWORD=password_super_seguro\n      - N8N_HOST=n8n.${stackDomain}\n      - N8N_PORT=5678\n      - N8N_PROTOCOL=https\n      - WEBHOOK_URL=https://n8n.${stackDomain}/\n      - GENAI_OLLAMA_HOST=http://ollama:11434\n    volumes:\n      - n8n_data:/home/node/.n8n\n    restart: unless-stopped\n    depends_on:\n      - postgres-n8n\n      - ollama\n\n  # Plane Project Management Web Client\n  plane-web:\n    image: makeplane/plane-frontend:latest\n    container_name: plane-web\n    ports:\n      - "8000:8000"\n    environment:\n      - API_URL=http://plane-api:8000\n    restart: unless-stopped\n\nvolumes:\n  ollama_data:\n    name: ollama_data\n  postgres_data:\n    name: postgres_data\n  n8n_data:\n    name: n8n_data`;
+                              navigator.clipboard.writeText(yaml);
+                              setCopiedStackCompose(true);
+                              showToast("📋 ¡Docker Compose copiado al portapapeles!");
+                              setTimeout(() => setCopiedStackCompose(false), 2000);
+                            }}
+                            className="px-3 py-1 bg-amber-400 text-black hover:bg-amber-300 font-bold rounded-lg font-mono transition text-[10px] cursor-pointer border-0"
+                          >
+                            {copiedStackCompose ? "✓ Copiado" : "Copiar Recta YAML"}
+                          </button>
+                        </div>
+                        <pre className="p-4 text-xs font-mono overflow-x-auto max-h-72 bg-[#030305] border border-white/5 rounded-b-2xl whitespace-pre text-neutral-300 m-0">
+{`version: '3.8'
+
+services:
+  # Ollama - IA Local
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped`}
+{stackOllamaGPU ? `
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]` : ""}
+{`
+
+  # Base de Datos para n8n
+  postgres-n8n:
+    image: postgres:16-alpine
+    container_name: postgres-n8n
+    environment:
+      POSTGRES_USER: n8n_admin
+      POSTGRES_PASSWORD: password_super_seguro
+      POSTGRES_DB: n8n_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # n8n - Motor de Automatización
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres-n8n
+      - DB_POSTGRESDB_DATABASE=n8n_db
+      - DB_POSTGRESDB_USER=n8n_admin
+      - DB_POSTGRESDB_PASSWORD=password_super_seguro
+      - N8N_HOST=n8n.${stackDomain}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.${stackDomain}/
+      - GENAI_OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+    depends_on:
+      - postgres-n8n
+      - ollama
+
+  # Plane Web
+  plane-web:
+    image: makeplane/plane-frontend:latest
+    container_name: plane-web
+    ports:
+      - "8000:8000"
+    environment:
+      - API_URL=http://plane-api:8000
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+    name: ollama_data
+  postgres_data:
+    name: postgres_data
+  n8n_data:
+    name: n8n_data`}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: SAVINGS CALCULATOR */}
+                  {activeStackTab === "calculator" && (
+                    <div className="space-y-6 animate-fade-in font-sans">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Análisis Financiero de T.I.</span>
+                        <h4 className="text-sm font-bold text-white uppercase font-mono">Calculadora de Ahorro SaaS del Stack</h4>
+                        <p className="text-xs text-neutral-400 font-sans">
+                          Compara las licencias de usuario en ChatGPT Plus, Zapier/Make y Jira frente a operar tu propio hosting VPS unificado.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Inputs Zone */}
+                        <div className="p-5 bg-neutral-950 border border-white/5 rounded-2xl space-y-5 text-left">
+                          <span className="text-xs font-mono text-amber-400 block font-bold uppercase tracking-wider">Tus suscripciones de hoy</span>
+
+                          {/* Seats parameter for Chat (ChatGPT/Opus) and Jira */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center text-xs font-mono">
+                              <span className="text-neutral-300 uppercase">Licencias de Equipo (Usuarios)</span>
+                              <span className="text-amber-400 font-bold">{calcSeats} usuarios</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="50"
+                              step="1"
+                              value={calcSeats}
+                              onChange={(e) => setCalcSeats(Number(e.target.value))}
+                              className="w-full accent-amber-400 bg-neutral-900 cursor-pointer h-1 rounded appearance-none"
+                            />
+                            <p className="text-[10px] text-neutral-500 leading-tight">
+                              Número de miembros que pagan licencias concurrentes en Jira/Linear y ChatGPT Plus.
+                            </p>
+                          </div>
+
+                          {/* Zapier tasks parameter */}
+                          <div className="space-y-1.5 pt-3.5 border-t border-white/5">
+                            <div className="flex justify-between items-center text-xs font-mono">
+                              <span className="text-neutral-300 uppercase">Tareas Mensuales (Zapier)</span>
+                              <span className="text-amber-400 font-bold">{calcZapierTasks.toLocaleString()} ejecuciones</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="500"
+                              max="100000"
+                              step="500"
+                              value={calcZapierTasks}
+                              onChange={(e) => setCalcZapierTasks(Number(e.target.value))}
+                              className="w-full accent-amber-400 bg-neutral-900 cursor-pointer h-1 rounded appearance-none"
+                            />
+                            <p className="text-[10px] text-neutral-500 leading-tight">
+                              Volumen de tareas o llamadas lógicas procesadas en Zapier o Make al mes.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Calculations & Results Zone */}
+                        <div className="p-5 bg-neutral-950/80 border border-amber-500/10 rounded-2xl flex flex-col justify-between space-y-4">
+                          {(() => {
+                            const chatCost = calcSeats * 20; // $20/seat
+                            const jiraCost = calcSeats * 10; // $10/seat
+                            
+                            let zapierEstimate = 29;
+                            if (calcZapierTasks > 1000) zapierEstimate = 49;
+                            if (calcZapierTasks > 5000) zapierEstimate = 129;
+                            if (calcZapierTasks > 10000) zapierEstimate = 199;
+                            if (calcZapierTasks > 25000) zapierEstimate = 299;
+                            if (calcZapierTasks > 50000) zapierEstimate = 599;
+                            if (calcZapierTasks > 75000) zapierEstimate = 899;
+                            
+                            const totalSaaSMonthly = chatCost + jiraCost + zapierEstimate;
+                            const totalHostingMonthly = 15; // standard Docker Hosting price
+                            const monthlySavings = totalSaaSMonthly - totalHostingMonthly;
+                            const yearlySavings = monthlySavings * 12;
+
+                            return (
+                              <div className="space-y-3.5 text-left">
+                                <span className="text-xs font-mono text-center block tracking-widest text-neutral-500 uppercase">Resultados del Ahorro</span>
+                                
+                                {/* Cost Breakdown */}
+                                <div className="space-y-1.5 text-xs font-mono">
+                                  <div className="flex justify-between py-1 border-b border-white/5">
+                                    <span className="text-neutral-400">Planes Chat AI (${calcSeats} x $20)</span>
+                                    <span className="text-white">${chatCost} /mes</span>
+                                  </div>
+                                  <div className="flex justify-between py-1 border-b border-white/5">
+                                    <span className="text-neutral-400">Linear o Jira (${calcSeats} x $10)</span>
+                                    <span className="text-white">${jiraCost} /mes</span>
+                                  </div>
+                                  <div className="flex justify-between py-1 border-b border-white/5">
+                                    <span className="text-neutral-400">Zapier o Make</span>
+                                    <span className="text-white">${zapierEstimate} /mes</span>
+                                  </div>
+                                  <div className="flex justify-between py-1 border-b border-white/5 text-red-400 font-bold">
+                                    <span>Total Suscripciones SaaS</span>
+                                    <span>${totalSaaSMonthly} /mes</span>
+                                  </div>
+                                  <div className="flex justify-between py-1 border-b border-white/5 text-amber-400 font-black">
+                                    <span>Hospedaje de Wentix Stack (Host VPS)</span>
+                                    <span>$15 /mes</span>
+                                  </div>
+                                </div>
+
+                                {/* Metrics box */}
+                                <div className="bg-neutral-900 border border-white/5 rounded-xl p-3.5 text-center space-y-1">
+                                  <span className="text-[9px] font-mono text-amber-400 uppercase tracking-widest block font-bold">Ahorro Neto Estimado</span>
+                                  <div className="text-white font-mono font-black text-2xl">
+                                    ${monthlySavings.toLocaleString()} <span className="text-[10px] text-neutral-400 font-normal">/mes</span>
+                                  </div>
+                                  <div className="text-emerald-400 font-mono text-xs font-bold">
+                                    ${yearlySavings.toLocaleString()} USD al año de ahorro garantizado
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: DEPLOYMENT MANUAL */}
+                  {activeStackTab === "guide" && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Modelo de Negocio e Integración</span>
+                        <h4 className="text-sm font-bold text-white uppercase font-mono">Guía de Comercialización e Implementación de Sistemas</h4>
+                        <p className="text-xs text-neutral-400 font-sans">
+                          Aprende a cobrar la configuración, despliegue y entrenamiento de este stack para agencias, startups y negocios locales.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl space-y-3">
+                          <span className="text-xs font-bold text-white font-mono uppercase block">El Paquete Comercial Básico</span>
+                          <p className="text-[11px] text-neutral-400 leading-normal font-sans m-0">
+                            <strong>"La Solución de Soberanía Digital":</strong> Instalas el Docker Compose completo en el VPS propio del cliente, asocias sus dominios con SSL/HTTPS seguros, realizas copias de seguridad de las bases de datos y les provees 1 hora de capacitación integral.
+                          </p>
+                          <div className="pt-2 border-t border-white/5 text-[10px] font-sans">
+                            <span className="text-neutral-500 font-mono block">Tarifa sugerida:</span>
+                            <span className="text-amber-400 font-bold">$300 - $800 USD pago de configuración inicial</span>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-neutral-950 border border-white/5 rounded-2xl space-y-3">
+                          <span className="text-xs font-bold text-white font-mono uppercase block">El Retenedor Mensual de Soporte</span>
+                          <p className="text-[11px] text-neutral-400 leading-normal font-sans m-0">
+                            <strong>"Mantenedor de Flujos y Mantenimiento":</strong> Ofreces auditorías periódicas, copias de seguridad remotas diarias y desarrollo asistido de nuevos flujos o webhooks integrados con Ollama y sus bases de datos en n8n.
+                          </p>
+                          <div className="pt-2 border-t border-white/5 text-[10px] font-sans">
+                            <span className="text-neutral-500 font-mono block">Tarifa sugerida:</span>
+                            <span className="text-amber-400 font-bold">$100 - $250 USD al mes por soporte activo</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-5 border border-dashed border-amber-500/35 bg-neutral-900/40 rounded-2xl text-left">
+                        <span className="px-2 py-0.5 bg-neutral-950 border border-amber-500/30 rounded text-amber-400 font-mono text-[9px] font-bold uppercase tracking-widest block w-fit mb-2">Mensaje Comercial Clave</span>
+                        <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                          <em>"Te consolido un sistema operativo empresarial en tu propio servidor dedicado. No solo reducimos tus licencias fijas recurrentes de software hoy, sino que preparamos a tu negocio para flujos de automatización locales seguros con IA que escala con cero costos por token."</em>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* FAQ SYSTEM FOR STACK */}
+                  <div className="space-y-4 pt-6 border-t border-white/5 text-left">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">Resolución de dudas</span>
+                      <h4 className="text-sm font-bold text-white uppercase font-mono">Preguntas Frecuentes sobre el Stack</h4>
+                    </div>
+
+                    <div className="space-y-3">
+                      {[
+                        {
+                          q: "¿Cuáles son los requisitos de hardware recomendados para el VPS de este stack?",
+                          a: "Con un VPS básico de 4 núcleos de CPU y 8 GB de RAM (como los de Hetzner, DigitalOcean o AWS) puedes hospedar n8n, postgres y Plane fluidamente, junto con modelos ligeros de Ollama como Llama-3-8B. Para modelos masivos (de más de 14B de parámetros) o procesos concurrentes muy extensos, se aconseja contar con aceleración Nvidia (vGPU o VM dedicada)."
+                        },
+                        {
+                          q: "¿Es seguro procesar webhooks externos con n8n auto-hospedado?",
+                          a: "Totalmente. Al configurar tu dominio con SSL seguro (mediante Traefik, Nginx o Cloudflare), todas las llamadas de red entrantes para webhooks lógicos se cifran de extremo a extremo. Puedes recibir datos externos de Stripe, Typeform o CRM nativos de forma 100% segura."
+                        },
+                        {
+                          q: "¿Cómo se gestionan las actualizaciones del sistema de Plane y n8n?",
+                          a: "Es tan simple como cambiar la tag de la versión de la imagen en tu docker-compose.yml y refrescar los contenedores corriendo: `docker compose pull && docker compose up -d`. Las bases de datos migrarán sus esquemas automáticamente al iniciar."
+                        }
+                      ].map((faq, idx) => {
+                        const isFaqExpanded = expandedStackFaq === idx;
+                        return (
+                          <div key={idx} className="p-4 bg-neutral-950/60 hover:bg-neutral-950 border border-white/5 rounded-2xl transition">
+                            <button
+                              onClick={() => { setExpandedStackFaq(isFaqExpanded ? null : idx); showToast(`💬 Duda: ${faq.q}`); }}
+                              className="w-full flex justify-between items-center text-left text-xs font-bold text-white uppercase font-mono cursor-pointer bg-transparent border-0 font-sans"
+                            >
+                              <span className="text-neutral-200">{faq.q}</span>
+                              <ChevronDown className={`w-4 h-4 text-amber-400 shrink-0 transform transition-transform ${isFaqExpanded ? "rotate-180" : ""}`} />
+                            </button>
+                            {isFaqExpanded && (
+                              <p className="text-xs text-neutral-400 leading-relaxed mt-3 font-sans pb-1 m-0">
+                                {faq.a}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* AUXILIARY REVENUE RESOURCES */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-6 border-t border-white/5 text-left">
+                    <a href="https://github.com/n8n-io/n8n" target="_blank" rel="noopener noreferrer" className="p-4 bg-neutral-950 hover:bg-[#0f0f18] border border-white/5 hover:border-amber-500/35 rounded-2xl block transition-all group no-underline">
+                      <strong className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors uppercase font-mono block mb-1">Repositorio de n8n</strong>
+                      <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                        Encuentra nodos comunitarios, plantillas oficiales de automatización y guías específicas para configurar integraciones.
+                      </p>
+                    </a>
+
+                    <a href="https://github.com/makeplane/plane" target="_blank" rel="noopener noreferrer" className="p-4 bg-neutral-950 hover:bg-[#0f0f18] border border-white/5 hover:border-amber-500/35 rounded-2xl block transition-all group no-underline">
+                      <strong className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors uppercase font-mono block mb-1">Repositorio de Plane</strong>
+                      <p className="text-xs text-neutral-400 leading-relaxed m-0 font-sans">
+                        La de todo el código de Plane para Docker, Kubernetes, migraciones avanzadas y despliegues self-hosted escalables.
+                      </p>
+                    </a>
                   </div>
                 </div>
               )}
