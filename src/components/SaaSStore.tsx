@@ -28,7 +28,19 @@ import {
   User,
   Hash,
   Bot,
-  Heart
+  Heart,
+  AlertTriangle,
+  FileText,
+  UploadCloud,
+  CheckCircle2,
+  Download,
+  Search,
+  Compass,
+  Database,
+  Server,
+  TrendingDown,
+  Star,
+  Clock
 } from "lucide-react";
 
 // Types for Premium SaaS Items
@@ -63,7 +75,7 @@ export default function SaaSStore({ onShowToast, onAddBacker }: SaaSStoreProps) 
   const [storeTab, setStoreTab] = useState<"catalogo" | "mis-licencias">("catalogo");
 
   // Selected tool for active demo simulator
-  const [activeDemoAppId, setActiveDemoAppId] = useState<string>("saas-multipost");
+  const [activeDemoAppId, setActiveDemoAppId] = useState<string>("saas-whatsapp-analyzer");
 
   // State for Purchase/Checkout modal
   const [checkoutApp, setCheckoutApp] = useState<{ app: SaaSApp; type: "monthly" | "lifetime"; price: number } | null>(null);
@@ -74,6 +86,257 @@ export default function SaaSStore({ onShowToast, onAddBacker }: SaaSStoreProps) 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentStep, setPaymentStep] = useState<"idle" | "running" | "success">("idle");
   const [generatedLicense, setGeneratedLicense] = useState("");
+
+  // ----------------------------------------------------
+  // SIMULATOR 0 STATES: RADAR WENTIX AI WIND (WINNER)
+  // ----------------------------------------------------
+  const [radarCountry, setRadarCountry] = useState<"Todos" | "CL" | "CO" | "EC" | "GT">("Todos");
+  const [radarSearchKeyword, setRadarSearchKeyword] = useState("");
+  const [radarSelectedCategory, setRadarSelectedCategory] = useState<string>("Todos");
+  const [radarSelectedSupplier, setRadarSelectedSupplier] = useState<string>("Todos");
+  const [radarSelectedSorting, setRadarSelectedSorting] = useState<string>("Días vendiendo");
+  const [radarSelectedProductId, setRadarSelectedProductId] = useState<string | null>(null);
+  const [radarSimSidebarTab, setRadarSimSidebarTab] = useState<"productos" | "proveedores" | "anuncios" | "configuracion">("productos");
+  
+  // States for Radar Live Video Showcase
+  const [radarVideoUrl, setRadarVideoUrl] = useState<string>("");
+  const [radarVideoFile, setRadarVideoFile] = useState<string | null>(null);
+  const [radarVideoName, setRadarVideoName] = useState<string>("");
+  const [radarVideoPlaying, setRadarVideoPlaying] = useState(false);
+  
+  // Custom mock product objects that match the user screenshot exactly
+  const [radarProducts, setRadarProducts] = useState([
+    {
+      id: "gt-1",
+      rank: "#1283",
+      change: "▼6",
+      changeType: "down",
+      country: "GT",
+      name: "KINOKI DESINTOXICACION 20848-46",
+      price: 59,
+      cost: 23,
+      currency: "GTQ",
+      stock: 98,
+      maxStock: 200,
+      category: "BELLEZA",
+      adsCount: 6,
+      alert: "🔥 ¡Descuento de stock crítico: alta demanda local!",
+      storeName: "DISTRIBUIDORA GT",
+      dailySales: 15,
+      growth: "61%",
+      image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [14, 8, 20, 15, 12, 6]
+    },
+    {
+      id: "cl-1",
+      rank: "#45",
+      change: "▼4",
+      changeType: "down",
+      country: "CL",
+      name: "ANILLO DE PROMESA AJUSTABLE",
+      price: 190,
+      cost: 55,
+      currency: "CLP",
+      stock: 33,
+      maxStock: 100,
+      category: "BISUTERÍA",
+      adsCount: 16,
+      alert: "⚠️ Pocas unidades en bodega de Joyería Elite",
+      storeName: "JOYERIA DE LA ELITE",
+      dailySales: 22,
+      growth: "71%",
+      image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [5, 12, 4, 16, 8, 4]
+    },
+    {
+      id: "ec-1",
+      rank: "#36",
+      change: "▲1",
+      changeType: "up",
+      country: "EC",
+      name: "Set pulsera llave",
+      price: 120,
+      cost: 55,
+      currency: "USD",
+      stock: 1871,
+      maxStock: 2500,
+      category: "BISUTERÍA",
+      adsCount: 5,
+      alert: null,
+      storeName: "JOYERIA DE LA ELITE",
+      dailySales: 35,
+      growth: "54%",
+      image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [25, 28, 37, 3, 16, 1]
+    },
+    {
+      id: "co-1",
+      rank: "#10043",
+      change: "▼45",
+      changeType: "down",
+      country: "CO",
+      name: "AIRI - Vital Source Nutrition",
+      price: 60,
+      cost: 60,
+      currency: "COP",
+      stock: 4819,
+      maxStock: 6000,
+      category: "SALUD",
+      adsCount: 53,
+      alert: "🔥 Top ventas en Colombia hoy",
+      storeName: "ALTAMIRA",
+      dailySales: 112,
+      growth: "89%",
+      image: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [11, 40, 19, 53, 45, 17]
+    },
+    {
+      id: "cl-2",
+      rank: "#7426",
+      change: "▼21",
+      changeType: "down",
+      country: "CL",
+      name: "EVIL GOODS",
+      price: 149,
+      cost: 40,
+      currency: "CLP",
+      stock: 4893,
+      maxStock: 8000,
+      category: "SALUD",
+      adsCount: 20,
+      alert: null,
+      storeName: "NATURAL LABS ORGANIC",
+      dailySales: 89,
+      growth: "73%",
+      image: "https://images.unsplash.com/photo-1527960656366-ee2a999e32e6?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [68, 46, 20, 48, 21, 15]
+    },
+    {
+      id: "co-2",
+      rank: "#69746",
+      change: "▼18",
+      changeType: "down",
+      country: "CO",
+      name: "Polvo Limpiador De Drenaje",
+      price: 1,
+      cost: 810,
+      currency: "COP",
+      stock: 48628,
+      maxStock: 60000,
+      category: "COCINA",
+      adsCount: 12,
+      alert: "🔥 Limpieza profunda garantizada",
+      storeName: "VIDA Y HOGAR SPA",
+      dailySales: 74,
+      growth: "65%",
+      image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [38, 58, 7, 12, 33, 18]
+    },
+    {
+      id: "cl-3",
+      rank: "#120738",
+      change: "▼16",
+      changeType: "down",
+      country: "CL",
+      name: "Crema Anti Verrugas",
+      price: 1,
+      cost: 2691,
+      currency: "CLP",
+      stock: 3418,
+      maxStock: 5000,
+      category: "BELLEZA",
+      adsCount: 7,
+      alert: "⭐ Novedad en el catálogo",
+      storeName: "VIDA Y HOGAR SPA",
+      dailySales: 45,
+      growth: "90%",
+      image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [12, 7, 7, 2, 16, 16]
+    },
+    {
+      id: "cl-4",
+      rank: "#4600",
+      change: "▼9",
+      changeType: "down",
+      country: "CL",
+      name: "Shampoo Batana Oil",
+      price: 120,
+      cost: 60,
+      currency: "CLP",
+      stock: 3924,
+      maxStock: 5000,
+      category: "BELLEZA",
+      adsCount: 15,
+      alert: "✨ Ideal para dropshipping estético",
+      storeName: "NATURAL LABS ORGANIC",
+      dailySales: 55,
+      growth: "50%",
+      image: "https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [23, 18, 6, 23, 9, 16]
+    },
+    {
+      id: "cl-5",
+      rank: "#86785",
+      change: "▼8",
+      changeType: "down",
+      country: "CL",
+      name: "Consola juego Retro M15",
+      price: 1,
+      cost: 19990,
+      currency: "CLP",
+      stock: 519,
+      maxStock: 1000,
+      category: "JUGUETERÍA",
+      adsCount: 18,
+      alert: "🔥 Alza en búsquedas Meta",
+      storeName: "VIDA Y HOGAR SPA",
+      dailySales: 24,
+      growth: "80%",
+      image: "https://images.unsplash.com/photo-1531525645387-7f14be1bdbbd?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [21, 18, 15, 14, 8, 8]
+    },
+    {
+      id: "co-3",
+      rank: "#4749",
+      change: "▼6",
+      changeType: "down",
+      country: "CO",
+      name: "Te Chino x 20",
+      price: 120,
+      cost: 60,
+      currency: "COP",
+      stock: 8481,
+      maxStock: 10000,
+      category: "BIENESTAR",
+      adsCount: 16,
+      alert: null,
+      storeName: "NATURAL LABS ORGANIC",
+      dailySales: 63,
+      growth: "50%",
+      image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=300",
+      sparkSales: [13, 15, 31, 6, 17, 6]
+    }
+  ]);
+
+  const [activeAdsSearchKeyword, setActiveAdsSearchKeyword] = useState<string | null>(null);
+  const [isSearchingAds, setIsSearchingAds] = useState(false);
+  const [adsResultsList, setAdsResultsList] = useState<Array<{ id: string; title: string; activeDays: number; copy: string; imgUrl: string; platform: string }>>([]);
+
+  // ----------------------------------------------------
+  // SIMULATOR 5 STATES: WHATSAPP SALES DECODER (GRATIS)
+  // ----------------------------------------------------
+  const [waConv1, setWaConv1] = useState("");
+  const [waConv2, setWaConv2] = useState("");
+  const [waConv3, setWaConv3] = useState("");
+  
+  const [waError1, setWaError1] = useState<string | null>(null);
+  const [waError2, setWaError2] = useState<string | null>(null);
+  const [waError3, setWaError3] = useState<string | null>(null);
+
+  const [isAnalyzingWa, setIsAnalyzingWa] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStepLog, setAnalysisStepLog] = useState("");
+  const [waAnalysisReport, setWaAnalysisReport] = useState<any | null>(null);
 
   // ----------------------------------------------------
   // SIMULATOR 1 STATES: MULTI-NETWORKS VIDEO AUTOPOST
@@ -229,80 +492,43 @@ export default function SaaSStore({ onShowToast, onAddBacker }: SaaSStoreProps) 
   // Premium SaaS lists
   const PREMIUM_SAAS_LIST: SaaSApp[] = [
     {
-      id: "saas-multipost",
-      name: "ShortBlast Multi-Agent AI",
-      tagline: "Motor de Render de Video & Disparador Automatizado Multi-Social",
-      badge: "MÁS POPULAR",
-      description: "Genera micro-videos cortados al milímetro con voces neuronales premium ultrarrealistas y publícalos de manera 100% automatizada e instantánea en TikTok, YouTube Shorts, Instagram Reels y Facebook en un solo clic.",
-      pricingMonthly: 29,
-      pricingLifetime: 149,
-      rating: 4.96,
-      accentColor: "border-cyan-500 text-cyan-400 bg-cyan-950/20 shadow-cyan-950/40",
-      features: [
-        "Renderizado de video multi-capa en la nube (Voz IA + Subtítulos + Clips)",
-        "API oficial de publicación directa en TikTok, Reels y Shorts",
-        "Evasión de filtros de copyright y detección automática de hashtags virales",
-        "Panel inteligente de analíticas acumulado en un único monitor",
-        "Licencia comercial para reventa de servicios de contenidos a clientes locales"
-      ],
-      lucideIcon: Video
-    },
-    {
-      id: "saas-content",
-      name: "Content Machine Carousel AI",
-      tagline: "El Redactor Visual de Hilos y Diapositivas Virales",
-      badge: "HOTSALE",
-      description: "Escribe hilos de contenido perspicuo para LinkedIn, Twitter (X) y formatea instantáneamente hermosos carruseles de imágenes estéticos listos para subir a Instagram o PDFs de LinkedIn diseñados para duplicar tu engagement orgánico.",
-      pricingMonthly: 19,
-      pricingLifetime: 89,
-      rating: 4.88,
-      accentColor: "border-purple-500 text-purple-400 bg-purple-950/20 shadow-purple-950/40",
-      features: [
-        "Inyección directa de blogs/URLs o transcripciones de YouTube",
-        "Estilos visuales modernos preconfigurados tipo Vercel y Linear",
-        "Estructura AIDA optimizada para máxima retención de lectura",
-        "Botón de descarga PDF directo y copia de texto en un clic",
-        "Planificador de calendario integrado para disparos programados"
-      ],
-      lucideIcon: Layers
-    },
-    {
-      id: "saas-whatsapp",
-      name: "WhatsApp OmniAgent Pro",
-      tagline: "Clon de Agente de Ventas & Conversor de Leads Permanente",
-      badge: "RECOMENDADO",
-      description: "Despliega un agente autónomo de ventas y soporte 24/7 conectado directamente a tus líneas de WhatsApp. Entrena al clon de IA con los PDFs, FAQs y precios de tu tienda o consultora para que capte, persuada y cierre pedidos en piloto automático.",
-      pricingMonthly: 39,
-      pricingLifetime: 199,
-      rating: 4.98,
+      id: "saas-whatsapp-analyzer",
+      name: "WhatsApp Sales Decoder AI",
+      tagline: "Auditor de Cierres de Ventas & Analizador Conversacional (100% GRATIS)",
+      badge: "NUEVO",
+      description: "Audita inmediatamente hasta 3 conversaciones de WhatsApp para detectar errores garrafales de cierre de ventas, medir la tasa de conversión, resolver pautas fallidas y obtener scripts correctores descargables.",
+      pricingMonthly: 0,
+      pricingLifetime: 0,
+      rating: 4.99,
       accentColor: "border-emerald-500 text-emerald-400 bg-emerald-950/20 shadow-emerald-950/40",
       features: [
-        "Integración web de WhatsApp nativa lista para escanear en 3 minutos",
-        "Respuestas hiper-personalizadas de alta conversión basadas en contexto propio",
-        "Integración directa con Stripe/Paypal para mandar enlaces de cobro por WhatsApp",
-        "Panel de transvía humana: toma el control de la conversación en cualquier instante",
-        "Cero cobro por mensajes enviados sin cargos ocultos"
+        "Identifica de inmediato si los archivos corresponden a chats reales de WhatsApp",
+        "Audita en detalle 3 situaciones críticas: Sin Ventas, Con Ventas, y Sin Respuesta (Ghosted)",
+        "Desglose meticuloso estructurado en puntos positivos primero y falencias negativas después",
+        "Detección de cierres equivocados, falta de urgencia, y mala estructuración del valor",
+        "Genera documentos / reportes de corrección completos listos para descargar o copiar"
       ],
       lucideIcon: MessageSquare
     },
     {
-      id: "saas-social-bot",
-      name: "SocialFlow Auto-Bot Pro",
-      tagline: "Piloto Automático de Respuestas, Likes, Menciones e Instahacks 24/7",
-      badge: "NUEVO",
-      description: "Escucha palabras clave, menciones e hilos en vivo de X/Twitter, Instagram y LinkedIn. Genera comentarios de altísimo valor de forma instantánea con el tono de tu marca, envía links por DM y saca estadísticas de alcance orgánico automáticas.",
-      pricingMonthly: 24,
-      pricingLifetime: 119,
-      rating: 4.95,
-      accentColor: "border-amber-500 text-amber-500 bg-amber-950/25 shadow-amber-950/40",
+      id: "saas-radar-winner",
+      name: "Radar Wentix AI Wind",
+      tagline: "Extractor y Analizador de Productos Ganadores para Dropshipping Local",
+      badge: "RECOMENDADO",
+      description: "Escanea y detecta los productos que más se están vendiendo en tiempo real en Chile, Colombia, Ecuador y Guatemala. Monitorea el descuento de stock, analiza la velocidad de compra y comprueba anuncios de competidores activos con un solo clic.",
+      pricingMonthly: 7, // represents the server fee in UI/billing, but with a note of $180 single payment
+      pricingLifetime: 180,
+      rating: 5.00,
+      accentColor: "border-amber-500 text-amber-400 bg-amber-950/20 shadow-amber-950/40",
       features: [
-        "Monitoreo persistente en tiempo real de hashtags y competidores",
-        "Inyección directa de links interactivos en Mensajes Directos (Auto-DM)",
-        "Modulador de tono de IA integrado (Educativo, Divertido, Persuasivo)",
-        "Generación autónoma de comentarios contextualizados de alto impacto",
-        "Controles anti-spam avanzados con delay humano para evasión de bloqueos"
+        "Base de datos de volumen de ventas actualizada para Chile, Colombia, Ecuador y Guatemala 🗺️",
+        "Escaner inteligente de stock promedio con cálculo y descuento en vivo (Velocidad de compra)",
+        "Alertas automáticas de reabastecimiento o aumentos drásticos de stock competidor",
+        "Análisis profundo de competidores calientes con enlaces directos integrados",
+        "Acceso directo a la Biblioteca de Anuncios con palabras clave del producto principal",
+        "Dominio incluido y auto-configurado por Wentix gratis (Soporte servidor de $7 USD/mes)"
       ],
-      lucideIcon: Bot
+      lucideIcon: Compass
     }
   ];
 
@@ -466,6 +692,382 @@ export default function SaaSStore({ onShowToast, onAddBacker }: SaaSStoreProps) 
     onShowToast("📋 ¡Copiado al portapapeles con éxito!");
   };
 
+  // ----------------------------------------------------
+  // RADAR WENTIX AI WIND (WINNER DROPSHIPPING) EFFECTS
+  // ----------------------------------------------------
+  // Live stock discounting simulation
+  useEffect(() => {
+    const stockInterval = setInterval(() => {
+      let selectedProduct: any = null;
+      setRadarProducts(prevProducts => {
+        // Find a random product index
+        const idx = Math.floor(Math.random() * prevProducts.length);
+        const updated = [...prevProducts];
+        const p = updated[idx];
+        
+        // Random decrement between 1 and 3
+        const dec = Math.floor(Math.random() * 3) + 1;
+        const newStock = Math.max(5, p.stock - dec);
+        
+        updated[idx] = {
+          ...p,
+          stock: newStock,
+          dailySales: p.dailySales + dec
+        };
+        
+        selectedProduct = updated[idx];
+        return updated;
+      });
+    }, 6000);
+
+    return () => clearInterval(stockInterval);
+  }, []);
+
+  // Ads simulation effect
+  useEffect(() => {
+    if (!activeAdsSearchKeyword) {
+      setAdsResultsList([]);
+      return;
+    }
+
+    setIsSearchingAds(true);
+    const adTimer = setTimeout(() => {
+      // Mock some highly engaging ads based on research keyword
+      const copies = [
+        `🔥 ¡TENDENCIA 2026! 🚨 Quedan pocas unidades en bodega con DESCUENTO especial. Envío GRATUITO a domicilio + Opción de Pago Contra Entrega. ¡Compra aquí antes de que se agote! 📦👇`,
+        `¿Buscas calidad y durabilidad? ❌ Olvida réplicas baratas. Consigue el original con 50% de DESCUENTO y paga al recibir en tu puerta. 🚚 Despacho express en 24-48 horas.`,
+        `⭐ EL MÁS VENDIDO DE LA SEMANA ⭐ Pide HOY mismo desde casa. Ideal para modernizar tu espacio o regalárselo a alguien especial. 🇨🇱🇨🇴🇪🇨🇬🇹 Oferta por tiempo súper limitado.`
+      ];
+
+      const platforms = ["Facebook Ads Library", "Instagram Stories Ads", "TikTok Spark Ads"];
+
+      const mockAds = [
+        {
+          id: "ad-1",
+          title: `Meta Ads - Active Creative`,
+          activeDays: Math.floor(Math.random() * 25) + 3,
+          copy: copies[0],
+          imgUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=400&q=80",
+          platform: platforms[0]
+        },
+        {
+          id: "ad-2",
+          title: `Instagram Placement - Reels`,
+          activeDays: Math.floor(Math.random() * 14) + 1,
+          copy: copies[1],
+          imgUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80",
+          platform: platforms[1]
+        },
+        {
+          id: "ad-3",
+          title: `TikTok Ads Manager - Video Feed`,
+          activeDays: Math.floor(Math.random() * 8) + 2,
+          copy: copies[2],
+          imgUrl: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=400&q=80",
+          platform: platforms[2]
+        }
+      ];
+
+      setAdsResultsList(mockAds);
+      setIsSearchingAds(false);
+      onShowToast(`🎯 Se extrajeron anuncios de competidores activos para: "${activeAdsSearchKeyword}"`);
+    }, 1500);
+
+    return () => clearTimeout(adTimer);
+  }, [activeAdsSearchKeyword]);
+
+  // Method to simulate Restock or Trigger surge stock alerts
+  const handleSimulateRestock = (productId: string) => {
+    setRadarProducts(prev => prev.map(p => {
+      if (p.id === productId) {
+        const added = Math.floor(Math.random() * 150) + 100;
+        onShowToast(`⚡ Simulación: Re-stock de +${added} unidades aplicado a ${p.name}`);
+        return {
+          ...p,
+          stock: p.stock + added,
+          alert: `🚀 ¡Se detectó ingreso de mercadería: +${added} un.! (${new Date().toLocaleTimeString()})`
+        };
+      }
+      return p;
+    }));
+  };
+
+  // ----------------------------------------------------
+  // HELPER METRICS AND EFFECTS FOR WHATSAPP ANALYZER
+  // ----------------------------------------------------
+  const validateWhatsAppFormat = (text: string): boolean => {
+    if (!text || text.trim().length === 0) return true;
+    const clean = text.trim();
+    if (clean.length < 15) return false;
+    
+    // Check if the text contains speakers (at least one colon with a word/sender prefix)
+    const hasSpeakers = /([A-Za-z0-9_\-\s]{2,15}\s*:)/.test(clean) || /\]\s*[A-Za-z0-0_\-\s]{2,15}\s*:/.test(clean);
+    
+    // Check for timestamps: brackets [12:34] or simple hours 12:34 or pm/am patterns
+    const hasTime = /\b\d{1,2}[:.]\d{2}\b/.test(clean) || /\[\d{1,2}[:.]\d{2}/.test(clean) || /\b\d{1,2}-\d{1,2}-\d{2,4}\b/.test(clean);
+    
+    // Also support classic Dialogue
+    const hasDialogue = clean.toLowerCase().includes("vendedor") || clean.toLowerCase().includes("cliente") || clean.toLowerCase().includes("consultor") || clean.toLowerCase().includes("academia") || clean.toLowerCase().includes("hola");
+    
+    return (hasSpeakers || hasDialogue) && hasTime;
+  };
+
+  useEffect(() => {
+    if (waConv1 && !validateWhatsAppFormat(waConv1)) {
+      setWaError1("⚠️ No son conversaciones de WhatsApp o no tienen el formato correcto (ej: '[10:15] Cliente: Hola')");
+    } else {
+      setWaError1(null);
+    }
+  }, [waConv1]);
+
+  useEffect(() => {
+    if (waConv2 && !validateWhatsAppFormat(waConv2)) {
+      setWaError2("⚠️ No son conversaciones de WhatsApp o no tienen el formato correcto (ej: '[11:02] Consultor: Hola')");
+    } else {
+      setWaError2(null);
+    }
+  }, [waConv2]);
+
+  useEffect(() => {
+    if (waConv3 && !validateWhatsAppFormat(waConv3)) {
+      setWaError3("⚠️ No son conversaciones de WhatsApp o no tienen el formato correcto (ej: '[14:30] Academia: Hola')");
+    } else {
+      setWaError3(null);
+    }
+  }, [waConv3]);
+
+  const handleLoadMockCases = () => {
+    setWaConv1(
+`[10:15 AM] Cliente: Hola buenas, vi las zapatillas Wentix de la publicidad. ¿Qué precio tienen?
+[10:16 AM] Vendedor: Hola buenos días, salen a $59.000 pesos chilenos.
+[10:18 AM] Cliente: Ah ya, entiendo. ¿Y son de cuero o son sintéticas?
+[10:19 AM] Vendedor: Hola, no, son sintéticas pero de alta resistencia. ¿Te interesa alguna?
+[10:25 AM] Cliente: Dale gracias. Te aviso cualquier cosa.
+[10:26 AM] Vendedor: Ya, súper. Quedo atento si te decides.`
+    );
+    setWaConv2(
+`[11:02 AM] Cliente: Hola! Me interesa la consultoría Wentix Pro. ¿Cuál es el valor?
+[11:03 AM] Consultor: ¡Hola! Qué gusto saludarte. El valor depende del tamaño de tu negocio para diseñarlo a medida. Cuéntame, ¿cuántas personas atienden o qué producto vendes hoy para ver el potencial?
+[11:05 AM] Cliente: Tengo una tienda ecommerce de calzado y somos 3 personas. Vendemos unos 150 pedidos al mes y queremos automatizar respuestas de WhatsApp.
+[11:07 AM] Consultor: Excelente, calzado tiene alta recompra. Automatizar las FAQs te liberará el 70% del tiempo para concentrarte en el marketing. El plan Pro para ecommerce de 3 usuarios cuesta $150 USD mensuales e incluye todo el montaje.
+[11:08 AM] Cliente: Súper bueno. ¿Cómo haríamos el pago?
+[11:09 AM] Consultor: Te puedo generar un enlace seguro para transferencia o tarjeta de crédito. ¿Prefieres que lo paguemos en dólares o en tu moneda local para emitir la factura hoy mismo?
+[11:10 AM] Cliente: Tarjeta de crédito en dólares me sirve más. Mándame el link!
+[11:11 AM] Consultor: ¡Perfecto! Aquí tienes el enlace de pago seguro...`
+    );
+    setWaConv3(
+`[14:30 PM] Cliente: Hola, info sobre los cursos de automatización de n8n porfa.
+[14:31 PM] Academia: Hola! El curso online de n8n consta de 12 módulos de video interactivo, clases por zoom grabadas los sábados a las 11:00 am, tareas semanales corregidas por un tutor experto y acceso para siempre a la comunidad exclusiva de discord. El valor regular es de $299 USD pero tenemos descuento esta semana de $199 USD. Avísame si quieres unirte porque cerramos mañana en la noche.
+[14:35 PM] (Entregado y Visto por el Cliente)
+[18:00 PM] Academia: Hola, ¿pudiste revisar la info? Nos quedan pocos cupos.
+[18:10 PM] (Visto por el Cliente - Sin respuesta)`
+    );
+
+    setWaError1(null);
+    setWaError2(null);
+    setWaError3(null);
+    
+    onShowToast("💼 Casos de prueba de ventas cargados en los slots. ¡Formato validado!");
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, slot: 1 | 2 | 3) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (slot === 1) setWaConv1(content);
+      if (slot === 2) setWaConv2(content);
+      if (slot === 3) setWaConv3(content);
+      onShowToast(`📁 Conversación cargada desde: ${file.name}`);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleRunWaAnalysis = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!waConv1.trim() && !waConv2.trim() && !waConv3.trim()) {
+      onShowToast("❌ Inserta al menos una conversación de WhatsApp para realizar la auditoría.");
+      return;
+    }
+
+    if (waError1 || waError2 || waError3) {
+      onShowToast("❌ Error de Formato: Una o más conversaciones no tienen formato de WhatsApp. Corrige antes de procesar.");
+      return;
+    }
+
+    setIsAnalyzingWa(true);
+    setAnalysisProgress(0);
+    setAnalysisStepLog("Iniciando auditor híbrido de ventas...");
+    setWaAnalysisReport(null);
+
+    const steps = [
+      { p: 15, log: "🔍 Escaneando estructura y diálogos del archivo de WhatsApp..." },
+      { p: 40, log: "❌ Buscando falencias de cierre, respuestas tardías y objeciones..." },
+      { p: 65, log: "⚙️ Estructurando embudo: Evaluando tipo de cierre y coherencia AIDA..." },
+      { p: 85, log: "📝 Formulando reporte pormenorizado (Primero puntos positivos, luego negativos)..." },
+      { p: 100, log: "🚀 Auditoría finalizada éxitosamente. ¡Reporte listo!" }
+    ];
+
+    let current = 0;
+    const interval = setInterval(() => {
+      if (current < steps.length) {
+        setAnalysisProgress(steps[current].p);
+        setAnalysisStepLog(steps[current].log);
+        current++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsAnalyzingWa(false);
+          generateAuditReportResult();
+        }, 800);
+      }
+    }, 700);
+  };
+
+  const generateAuditReportResult = () => {
+    const report: any = {
+      overallScore: 78,
+      veredict: "Estructuras de cierres mixtas con falencia crítica de valorización previa y preguntas cerradas.",
+      scenarios: []
+    };
+
+    if (waConv1.trim()) {
+      const isCustom1 = waConv1.includes("wentix") || waConv1.includes("Wentix") || waConv1.includes("zapatillas");
+      report.scenarios.push({
+        id: "scenario-1",
+        title: "Conversación 1: Sin Ventas (Caso Objeción)",
+        status: "OPORTUNIDAD PERDIDA (Falta de Valorización previa al Precio)",
+        statusColor: "text-red-400 border-red-500/25 bg-red-950/20",
+        positives: [
+          "Establece un saludo inicial cordial al recibir al prospecto",
+          "Atención rápida y oportuna (menos de 1 minuto de demora)",
+          "Trato respetuoso y ameno que genera agrado inicial"
+        ],
+        negatives: [
+          "Falla Estructural de Cierre: Arroja el precio de inmediato ($59.000) sin explicar primero las características del material o beneficios.",
+          "Tipo de Cierre Equivocado: Empleó un cierre cerrado que facilita la salida rápida del prospecto: '¿Te interesa alguna?'.",
+          "Urgencia Nula: Ausencia total de llamados de urgencia, stocks limitados, o ganchos promocionales para incentivar la decisión pasiva.",
+          "Falta de Proactividad: Aceptó con pasividad absoluta el enfriamiento ('Te aviso cualquier cosa' -> 'Súper, quedo atento') perdiendo contacto."
+        ],
+        redesign: isCustom1 ? 
+`[10:15 AM] Cliente: Hola buenas, ¿Qué precio tienen las zapatillas Wentix?
+[10:16 AM] Vendedor: ¡Hola! Qué gusto saludarte. Te cuento que las Wentix Pro son ultraligeras, con suela ergonómica de alto rendimiento ideales para uso diario y deporte intenso. Su valor promocional con envío gratis es de solo $59.000.
+[10:18 AM] Cliente: Ah ya de acuerdo. ¿Y son de cuero o sintéticas?
+[10:19 AM] Vendedor: Son sintéticas de microfibra de alta resistencia y respirables (duran el doble que el cuero común y no se agrietan). ¿Prefieres despacho gratis para Santiago o regiones para revisar disponibilidad hoy mismo? (Cierre de Doble Alternativa)` :
+`[Formato Sugerido - Cierre de Doble Alternativa]
+Vendedor: En vez de preguntar "¿Te interesa?", utiliza cierres de doble alternativa: 
+"¿Prefieres que programemos la entrega para mañana por la mañana o el sábado en la tarde?"
+O en vez de dar el precio directo:
+"Te comento que incluye garantía de 30 días, materiales premium... el valor es de [X]. ¿Prefieres pagar con tarjeta o transferencia?"`
+      });
+    }
+
+    if (waConv2.trim()) {
+      const isCustom2 = waConv2.includes("consultoría") || waConv2.includes("Pro") || waConv2.includes("ecommerce");
+      report.scenarios.push({
+        id: "scenario-2",
+        title: "Conversación 2: Con Ventas (Caso de Éxito)",
+        status: "ÉXITO DE CIERRE (Cierre de Doble Alternativa Aplicado)",
+        statusColor: "text-emerald-400 border-emerald-500/25 bg-emerald-950/20",
+        positives: [
+          "Fase de descubrimiento estelar: Investiga y califica al prospecto antes de soltar un precio de la nada.",
+          "Anclaje de Valor robusto: Explica que la solución le ahorrará el 70% del tiempo de FAQs antes de mencionar los $150 USD.",
+          "Cierre Asertivo de Doble Opción: Pregunta astutamente '¿Prefieres pagar en dólares o en moneda local?' facilitando el sí directo."
+        ],
+        negatives: [
+          "El vendedor omitió dar un gancho de urgencia de contratación inmediata, aunque cerró con éxito por la asertividad del cliente.",
+          "Falta de empaquetamiento opcional para escalabilidad futura del contrato sobre otros canales de marketing."
+        ],
+        redesign: isCustom2 ?
+`[11:08 AM] Cliente: Súper bueno. ¿Cómo haríamos el pago?
+[11:09 AM] Consultor: ¡Excelente elección! Te mandaré el link de pago encriptado de Stripe a tu WhatsApp. ¿Deseas emitir la boleta de forma personal o con datos tributarios de tu empresa para mandarte el link exacto? (Excelente cierre asertivo)` :
+`[Estructura Exitosa Aplicada]
+1. Saludo cordial y empático.
+2. Descubrimiento de necesidades ("¿De qué es tu negocio para guiarte?").
+3. Presentación de valor ("Te ayudará a ahorrar un 70% de tiempo").
+4. Cierre de Doble Alternativa ("¿Dólares o moneda local?"). ¡Estructura PERFECTA!`
+      });
+    }
+
+    if (waConv3.trim()) {
+      const isCustom3 = waConv3.includes("n8n") || waConv3.includes("Academia") || waConv3.includes("curso");
+      report.scenarios.push({
+        id: "scenario-3",
+        title: "Conversación 3: Visto o Ghosteado (Fallas de Infoxicación)",
+        status: "AUDITORÍA DE EN VISTO (Decision Paralysis - Ladrillo Infor.)",
+        statusColor: "text-amber-400 border-amber-500/25 bg-amber-955/20",
+        positives: [
+          "Entrega de información completa y detallada de los 12 módulos y canales de Discord.",
+          "Brinda incentivo económico por tiempo limitado ($299 a $199) buscando apelar a la escasez."
+        ],
+        negatives: [
+          "Infoxicación Extrema: Lanza un 'ladrillo de texto' impenetrable de un solo golpe. Produce pereza intelectual en el prospecto e incita a dejarlo en visto para 'revisar con calma'.",
+          "Entrega pasiva de la iniciativa: Redacta 'Avísame si quieres unirte...', delegando el esfuerzo de cierre totalmente en el cliente.",
+          "Seguimiento reactivo estéril: El recordatorio ('¿Pudiste revisar la info?') genera presión directa y culpabilidad en el prospecto en lugar de ofrecer un gancho interactivo."
+        ],
+        redesign: isCustom3 ?
+`[14:30 PM] Cliente: Hola, info sobre los cursos de automatización de n8n porfa.
+[14:31 PM] Academia: ¡Hola! Con gusto. Te cuento brevemente: nuestro curso de n8n te enseña a conectar sistemas y crear robots de IA para tu empresa. ¿Tienes ya alguna idea de automatización que quieras implementar en tu negocio, o partes de cero? (Pregunta de enganche interactivo)
+---
+[Evita enviar todo el temario en un solo párrafo. Revela conforme el cliente te vaya respondiendo. Mantén viva la interacción.]` :
+`[Formato de Seguimiento Persuasivo Recomendado]
+En lugar de: "¿Pudiste revisar la info?", utiliza un gancho de valor o una pregunta de baja fricción:
+"Hola, un colega me preguntó hoy si el diplomado incluye plantilla de cobros automáticos y me acordé de ti. Sí lo incluye. ¿Te gustaría que te mande un video corto de 2 minutos mostrando esa automatización específica?"`
+      });
+    }
+
+    setWaAnalysisReport(report);
+    onShowToast("📈 Auditoría completada con éxito. Revisa el reporte detallado.");
+  };
+
+  const handleDownloadWaReport = () => {
+    if (!waAnalysisReport) return;
+    
+    let text = `=======================================================\n`;
+    text    += `   REPORTE DE AUDITORÍA: WHATSAPP VENTAS - WENTIX       \n`;
+    text    += `   Fecha: ${new Date().toLocaleDateString()} - GRATUITO       \n`;
+    text    += `=======================================================\n\n`;
+    text    += `VEREDICTO GENERAL:\n${waAnalysisReport.veredict}\n\n`;
+    
+    waAnalysisReport.scenarios.forEach((sc: any) => {
+      text += `-------------------------------------------------------\n`;
+      text += `${sc.title.toUpperCase()}\n`;
+      text += `ESTADO: ${sc.status}\n`;
+      text += `-------------------------------------------------------\n\n`;
+      
+      text += `COSAS POSITIVAS:\n`;
+      sc.positives.forEach((pos: string) => {
+        text += ` [+] ${pos}\n`;
+      });
+      text += `\n`;
+      
+      text += `COSAS NEGATIVAS / FALENCIAS Y FALLAS:\n`;
+      sc.negatives.forEach((neg: string) => {
+        text += ` [-] ${neg}\n`;
+      });
+      text += `\n`;
+      
+      text += `ESTRUCTURA DE RE-DISEÑO / GUIÓN RECOMENDADO:\n`;
+      text += `${sc.redesign}\n\n\n`;
+    });
+    
+    text += `=======================================================\n`;
+    text += `  Estudio de Ventas de WhatsApp - Wentix Decodificador  \n`;
+    text += `=======================================================\n`;
+
+    const element = document.createElement("a");
+    const file = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    element.href = URL.createObjectURL(file);
+    element.download = "Auditoria_Conversaciones_WhatsApp_Wentix.txt";
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    onShowToast("💾 Reporte de WhatsApp descargado correctamente.");
+  };
+
   // Open Checkout Modal
   const handleOpenCheckout = (app: SaaSApp, type: "monthly" | "lifetime") => {
     const price = type === "monthly" ? app.pricingMonthly : app.pricingLifetime;
@@ -515,7 +1117,7 @@ export default function SaaSStore({ onShowToast, onAddBacker }: SaaSStoreProps) 
     }, 2500);
   };
 
-  const IS_STORE_DISABLED = true;
+  const IS_STORE_DISABLED = false;
 
   if (IS_STORE_DISABLED) {
     return (
@@ -899,34 +1501,84 @@ export default function SaaSStore({ onShowToast, onAddBacker }: SaaSStoreProps) 
 
                   {/* Buying Buttons Area */}
                   <div className="mt-5 pt-4 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 bg-black/20 p-3 rounded-xl">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Licencia Completa</span>
-                      <span className="text-sm font-extrabold text-white font-mono">
-                        ${app.pricingLifetime} <span className="text-[9.5px] font-normal text-neutral-400">único</span>
-                      </span>
-                    </div>
+                    {app.pricingLifetime === 0 ? (
+                      <>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Acceso de Por Vida</span>
+                          <span className="text-sm font-extrabold text-emerald-400 font-mono flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                            GRATUITO
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDemoAppId(app.id);
+                            onShowToast(`Abriendo el analizador gratuito de WhatsApp: ${app.name}`);
+                          }}
+                          className="px-3.5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-neutral-950 font-black text-[10px] rounded-xl font-mono transition-all cursor-pointer flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                        >
+                          <Play className="w-3 h-3 text-black fill-black shrink-0" />
+                          <span>Auditar Gratis 🚀</span>
+                        </button>
+                      </>
+                    ) : app.id === "saas-radar-winner" ? (
+                      <>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-mono text-neutral-400 uppercase tracking-wider">Pago Único</span>
+                          <span className="text-sm font-extrabold text-amber-400 font-mono">
+                            $180 USD
+                          </span>
+                          <span className="text-[8.5px] text-neutral-400 font-mono mt-0.5">
+                            + Mantenimiento Servidor (~$7/m)
+                          </span>
+                        </div>
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenCheckout(app, "monthly");
-                        }}
-                        className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-white/10 text-neutral-200 text-[10px] font-mono font-medium rounded-lg transition-colors cursor-pointer"
-                      >
-                        Suscripción (${app.pricingMonthly}/m)
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenCheckout(app, "lifetime");
-                        }}
-                        className="px-3 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-black text-[10px] font-extrabold rounded-lg font-mono transition-colors cursor-pointer flex items-center gap-1"
-                      >
-                        <Zap className="w-3 h-3" />
-                        <span>Comprar</span>
-                      </button>
-                    </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenCheckout(app, "lifetime");
+                            }}
+                            className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-neutral-950 text-[10.5px] font-extrabold rounded-lg font-mono transition-all cursor-pointer flex items-center gap-1 shadow-md shadow-amber-500/10"
+                          >
+                            <Zap className="w-3 h-3 text-black shrink-0 fill-black" />
+                            <span>Adquirir Radar ($180)</span>
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Licencia Completa</span>
+                          <span className="text-sm font-extrabold text-white font-mono">
+                            ${app.pricingLifetime} <span className="text-[9.5px] font-normal text-neutral-400">único</span>
+                          </span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenCheckout(app, "monthly");
+                            }}
+                            className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-white/10 text-neutral-200 text-[10px] font-mono font-medium rounded-lg transition-colors cursor-pointer"
+                          >
+                            Suscripción (${app.pricingMonthly}/m)
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenCheckout(app, "lifetime");
+                            }}
+                            className="px-3 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-black text-[10px] font-extrabold rounded-lg font-mono transition-colors cursor-pointer flex items-center gap-1"
+                          >
+                            <Zap className="w-3 h-3" />
+                            <span>Comprar</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -939,216 +1591,489 @@ export default function SaaSStore({ onShowToast, onAddBacker }: SaaSStoreProps) 
             <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/5 blur-[100px] rounded-full pointer-events-none" />
 
-            {/* SIMULATOR 1: SHORTBLAST AUTO-RENDER POSTER */}
-            {activeDemoAppId === "saas-multipost" && (
-              <div className="space-y-6 relative" id="simulator-shortblast">
+            {/* SIMULATOR 0: WHATSAPP sales decoder AI */}
+            {activeDemoAppId === "saas-whatsapp-analyzer" && (
+              <div className="space-y-6 relative" id="simulator-whatsapp-analyzer">
+                {/* Header */}
                 <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
                   <div className="flex items-center gap-3">
-                    <span className="p-2 bg-cyan-950/60 text-cyan-400 border border-cyan-500/30 rounded-xl shrink-0">
-                      <Video className="w-5 h-5" />
+                    <span className="p-2 bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 rounded-xl shrink-0">
+                      <MessageSquare className="w-5 h-5" />
                     </span>
                     <div>
-                      <span className="text-[10px] text-cyan-400 font-mono tracking-wider font-bold block uppercase">Mesa de Pruebas</span>
-                      <h3 className="text-base font-bold text-white tracking-tight">Simulador ShortBlast Multi-Social</h3>
+                      <span className="text-[10px] text-emerald-400 font-mono tracking-wider font-bold block uppercase flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-emerald-400 animate-pulse" />
+                        Herramienta Gratuita
+                      </span>
+                      <h3 className="text-base font-bold text-white tracking-tight">WhatsApp Sales Decoder AI</h3>
                     </div>
                   </div>
                   <span className="text-[10px] text-neutral-400 bg-neutral-900 px-2.5 py-1 rounded-lg border border-white/5 font-mono">
-                    PRODUCE Y EXPIDE EN VIVO
+                    AUDITOR DE CONVERSACIONES
                   </span>
                 </div>
 
-                {!videoDemoResult ? (
-                  <form onSubmit={handleRunVideoDemo} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold text-neutral-400 font-mono uppercase tracking-wider">
-                        1. Guión o Idea Principal del Micro-Video
-                      </label>
-                      <textarea
-                        value={videoPrompt}
-                        onChange={(e) => setVideoPrompt(e.target.value)}
-                        className="w-full text-xs font-sans bg-neutral-900 border border-white/5 rounded-xl p-3 focus:outline-none focus:border-cyan-500 text-neutral-200 resize-none h-20"
-                        placeholder="Ingresa la temática general..."
-                        disabled={isPlayingVideoDemo}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-neutral-400 font-mono uppercase tracking-wider">
-                          2. Locutor de voz Inteligente
-                        </label>
-                        <select
-                          value={videoVoice}
-                          onChange={(e) => setVideoVoice(e.target.value)}
-                          className="w-full text-xs bg-neutral-900 border border-white/5 rounded-xl p-3 text-neutral-300 focus:outline-none"
-                          disabled={isPlayingVideoDemo}
-                        >
-                          <option>Voz Masculina Profesional (IA)</option>
-                          <option>Voz Femenina Dinámica (IA)</option>
-                          <option>Voz Cinematográfica Grave</option>
-                          <option>Voz Energética con Entonación Latina</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-neutral-400 font-mono uppercase tracking-wider">
-                          3. Relación de Aspecto
-                        </label>
-                        <select
-                          value={videoRatio}
-                          onChange={(e) => setVideoRatio(e.target.value)}
-                          className="w-full text-xs bg-neutral-900 border border-white/5 rounded-xl p-3 text-neutral-300 focus:outline-none"
-                          disabled={isPlayingVideoDemo}
-                        >
-                          <option>9:16 (TikTok, Reels, Shorts)</option>
-                          <option>16:9 (YouTube Standard)</option>
-                          <option>1:1 (Post de Instagram/LinkedIn-X)</option>
-                        </select>
-                      </div>
-                    </div>
-
+                {/* Case Selector and descriptive intro */}
+                <div className="bg-neutral-950 border border-white/5 p-4 rounded-2xl space-y-3 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-400/10 to-transparent blur-xl pointer-events-none" />
+                  <p className="text-xs text-neutral-300 leading-relaxed text-left">
+                    Sube y analiza hasta <strong className="text-white">3 conversaciones de clientes reales de WhatsApp</strong> para auditar tu flujo de ventas. El algoritmo evaluará aciertos y falencias críticas en el proceso de cierre de forma instantánea.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2 justify-between items-stretch sm:items-center pt-2">
+                    <span className="text-[10px] font-mono text-neutral-400 uppercase text-left">¿Quieres probar rápido con plantillas reales?</span>
                     <button
-                      type="submit"
-                      disabled={isPlayingVideoDemo}
-                      className="w-full py-3 bg-linear-to-r from-cyan-400 to-purple-500 hover:brightness-110 font-bold font-mono text-black text-xs tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+                      type="button"
+                      onClick={handleLoadMockCases}
+                      className="px-3 py-1.5 bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-900/40 text-emerald-400 hover:text-white font-mono text-[10px] font-black rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                     >
-                      {isPlayingVideoDemo ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Simulando renderizado ({videoProgress}%)...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4 text-black" />
-                          <span>Generar Video y Desplegar Post ✨</span>
-                        </>
-                      )}
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      Cargar Casos de Estudio Reales 💼
                     </button>
-                  </form>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="p-4 bg-emerald-950/20 border border-emerald-500/20 rounded-xl flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                        <div>
-                          <p className="text-xs font-bold text-white">¡Ruta de publicación finalizada de forma exitosa!</p>
-                          <p className="text-[10px] text-neutral-400 font-mono">Expedido a las {videoDemoResult.date}</p>
+                  </div>
+                </div>
+
+                {/* Form Inputs for 3 slots */}
+                <form onSubmit={handleRunWaAnalysis} className="space-y-5">
+                  <div className="space-y-4">
+                    
+                    {/* Slot 1: Conversación Sin Ventas */}
+                    <div className="bg-neutral-900/40 border border-white/5 p-4 rounded-2xl space-y-3 text-left">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-red-955 text-red-400 border border-red-500/20 flex items-center justify-center text-[10px] font-mono font-bold">1</span>
+                          <span className="text-xs font-bold text-neutral-200">Requisito: Conversación Sin Ventas</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <label className="cursor-pointer px-2 py-1 bg-black/45 hover:bg-black/90 border border-white/10 text-[9px] font-mono text-neutral-400 hover:text-white rounded-md transition-colors flex items-center gap-1 leading-none select-none">
+                            <UploadCloud className="w-3.5 h-3.5" />
+                            <span>Sustituir .txt</span>
+                            <input
+                              type="file"
+                              accept=".txt,.log"
+                              onChange={(e) => handleFileUpload(e, 1)}
+                              className="hidden"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => { setWaConv1(""); onShowToast("🧹 Conversación 1 limpia"); }}
+                            className="text-[9px] font-mono text-neutral-500 hover:text-red-400 transition-colors"
+                          >
+                            Limpiar
+                          </button>
                         </div>
                       </div>
+
+                      <div className="relative">
+                        <textarea
+                          value={waConv1}
+                          onChange={(e) => setWaConv1(e.target.value)}
+                          placeholder="Pega aquí la conversación o arrastra tu archivo de chat (ej: '[10:15 AM] Cliente: Hola buenas, ¿Qué precio tienen?...')"
+                          className="w-full text-xs font-mono bg-neutral-950 border border-white/5 rounded-xl p-3 focus:outline-none focus:border-emerald-500 text-neutral-200 resize-none h-24"
+                        />
+                        {waConv1 && (
+                          <div className="absolute bottom-2.5 right-2 text-[8.5px] font-mono font-bold uppercase py-0.5 px-2 bg-neutral-900 rounded border border-white/10">
+                            {waError1 ? (
+                              <span className="text-red-400">Sin Formato</span>
+                            ) : (
+                              <span className="text-emerald-400">Formato OK ✓</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Immediate Error Notification */}
+                      {waError1 && (
+                        <div className="p-2.5 bg-red-950/20 border border-red-500/20 text-red-400 rounded-xl flex items-start gap-2 text-[10px] font-mono">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-400" />
+                          <span>{waError1}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Slot 2: Conversación Con Ventas */}
+                    <div className="bg-neutral-900/40 border border-white/5 p-4 rounded-2xl space-y-3 text-left">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-emerald-955 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-[10px] font-mono font-bold">2</span>
+                          <span className="text-xs font-bold text-neutral-200">Requisito: Conversación Con Ventas</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <label className="cursor-pointer px-2 py-1 bg-black/45 hover:bg-black/90 border border-white/10 text-[9px] font-mono text-neutral-400 hover:text-white rounded-md transition-colors flex items-center gap-1 leading-none select-none">
+                            <UploadCloud className="w-3.5 h-3.5" />
+                            <span>Sustituir .txt</span>
+                            <input
+                              type="file"
+                              accept=".txt,.log"
+                              onChange={(e) => handleFileUpload(e, 2)}
+                              className="hidden"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => { setWaConv2(""); onShowToast("🧹 Conversación 2 limpia"); }}
+                            className="text-[9px] font-mono text-neutral-500 hover:text-red-400 transition-colors"
+                          >
+                            Limpiar
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="relative">
+                        <textarea
+                          value={waConv2}
+                          onChange={(e) => setWaConv2(e.target.value)}
+                          placeholder="Pega aquí la conversación o arrastra tu archivo de chat (ej: '[11:02 AM] Consultor: Hola...')"
+                          className="w-full text-xs font-mono bg-neutral-950 border border-white/5 rounded-xl p-3 focus:outline-none focus:border-emerald-500 text-neutral-200 resize-none h-24"
+                        />
+                        {waConv2 && (
+                          <div className="absolute bottom-2.5 right-2 text-[8.5px] font-mono font-bold uppercase py-0.5 px-2 bg-neutral-900 rounded border border-white/10">
+                            {waError2 ? (
+                              <span className="text-red-400">Sin Formato</span>
+                            ) : (
+                              <span className="text-emerald-400">Formato OK ✓</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Immediate Error Notification */}
+                      {waError2 && (
+                        <div className="p-2.5 bg-red-950/20 border border-red-500/20 text-red-400 rounded-xl flex items-start gap-2 text-[10px] font-mono">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-400" />
+                          <span>{waError2}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Slot 3: Conversación En Visto/Ghosted */}
+                    <div className="bg-neutral-900/40 border border-white/5 p-4 rounded-2xl space-y-3 text-left">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-amber-955 text-amber-500 border border-amber-500/20 flex items-center justify-center text-[10px] font-mono font-bold">3</span>
+                          <span className="text-xs font-bold text-neutral-200">Requisito: Conversación que el Cliente vio la información y no respondió</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <label className="cursor-pointer px-2 py-1 bg-black/45 hover:bg-black/90 border border-white/10 text-[9px] font-mono text-neutral-400 hover:text-white rounded-md transition-colors flex items-center gap-1 leading-none select-none">
+                            <UploadCloud className="w-3.5 h-3.5" />
+                            <span>Sustituir .txt</span>
+                            <input
+                              type="file"
+                              accept=".txt,.log"
+                              onChange={(e) => handleFileUpload(e, 3)}
+                              className="hidden"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => { setWaConv3(""); onShowToast("🧹 Conversación 3 limpia"); }}
+                            className="text-[9px] font-mono text-neutral-500 hover:text-red-400 transition-colors"
+                          >
+                            Limpiar
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="relative">
+                        <textarea
+                          value={waConv3}
+                          onChange={(e) => setWaConv3(e.target.value)}
+                          placeholder="Pega aquí la conversación o arrastra tu archivo de chat (ej: '[14:30 PM] Academia: Hola...')"
+                          className="w-full text-xs font-mono bg-neutral-950 border border-white/5 rounded-xl p-3 focus:outline-none focus:border-emerald-500 text-neutral-200 resize-none h-24"
+                        />
+                        {waConv3 && (
+                          <div className="absolute bottom-2.5 right-2 text-[8.5px] font-mono font-bold uppercase py-0.5 px-2 bg-neutral-900 rounded border border-white/10">
+                            {waError3 ? (
+                              <span className="text-red-400">Sin Formato</span>
+                            ) : (
+                              <span className="text-emerald-400">Formato OK ✓</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Immediate Error Notification */}
+                      {waError3 && (
+                        <div className="p-2.5 bg-red-950/20 border border-red-500/20 text-red-400 rounded-xl flex items-start gap-2 text-[10px] font-mono">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-400" />
+                          <span>{waError3}</span>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+
+                  {/* Submission and loading states */}
+                  {!isAnalyzingWa ? (
+                    <button
+                      type="submit"
+                      disabled={!!(waError1 || waError2 || waError3 || (!waConv1.trim() && !waConv2.trim() && !waConv3.trim()))}
+                      className={`w-full py-3.5 font-bold font-mono text-xs tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                        (waError1 || waError2 || waError3 || (!waConv1.trim() && !waConv2.trim() && !waConv3.trim()))
+                          ? "bg-neutral-900 text-neutral-600 border border-white/5 cursor-not-allowed" 
+                          : "bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-neutral-950 shadow-lg shadow-emerald-500/10"
+                      }`}
+                    >
+                      <Terminal className="w-4 h-4 text-black" />
+                      <span>INICIAR AUDITORÍA DE VENTAS GRATIS ⚡</span>
+                    </button>
+                  ) : (
+                    <div className="space-y-3 bg-neutral-900 p-4 rounded-2xl border border-white/5">
+                      <div className="flex justify-between items-center text-[10.5px] font-mono">
+                        <span className="text-cyan-400 font-bold animate-pulse">{analysisStepLog}</span>
+                        <span className="text-white font-bold">{analysisProgress}%</span>
+                      </div>
+                      <div className="w-full bg-neutral-950 h-2 rounded-full overflow-hidden border border-white/5">
+                        <div 
+                          className="bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-500 h-full transition-all duration-300"
+                          style={{ width: `${analysisProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </form>
+
+                {/* ADVANCED DYNAMIC REPORT VIEW */}
+                {waAnalysisReport && (
+                  <div className="space-y-6 pt-4 border-t border-white/5 animate-fade-in text-left">
+                    <div className="bg-[#0b0c10] p-4 rounded-2xl border border-white/5 space-y-2 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/5 blur-2xl pointer-events-none" />
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Resumen de Diagnóstico</span>
+                        <span className="px-2 py-0.5 bg-cyan-950 text-cyan-400 border border-cyan-500/25 rounded font-mono text-[9px] font-black">
+                          INFORME CONSOLIDADO
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-extrabold text-white font-sans flex items-center gap-1.5 pt-1">
+                        <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+                        Veredicto General de Cierres:
+                      </h4>
+                      <p className="text-xs text-neutral-300 leading-relaxed pl-5.5 font-sans">
+                        {waAnalysisReport.veredict}
+                      </p>
+                    </div>
+
+                    {/* Scenarios detailed loop */}
+                    <div className="space-y-6">
+                      {waAnalysisReport.scenarios.map((sc: any) => (
+                        <div key={sc.id} className="p-5 bg-black/40 rounded-2xl border border-white/5 space-y-4 shadow-xl">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
+                            <h5 className="text-xs font-black font-mono text-white tracking-wider flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                              {sc.title}
+                            </h5>
+                            <span className={`px-2.5 py-0.5 text-[8.5px] font-mono font-bold rounded border ${sc.statusColor}`}>
+                              {sc.status}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Puntos Positivos */}
+                            <div className="space-y-2 bg-neutral-950/60 p-3 rounded-xl border border-white/5">
+                              <h6 className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1">
+                                <span>Cosas Positivas de la Atención 👍</span>
+                              </h6>
+                              <ul className="space-y-1.5">
+                                {sc.positives.map((pos: string, pIdx: number) => (
+                                  <li key={pIdx} className="text-xs text-neutral-300 font-sans flex items-start gap-1.5 leading-relaxed">
+                                    <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                                    <span>{pos}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Puntos Negativos / Falencias */}
+                            <div className="space-y-2 bg-neutral-950/60 p-3 rounded-xl border border-white/5">
+                              <h6 className="text-[10px] font-mono font-bold text-red-400 uppercase tracking-widest flex items-center gap-1">
+                                <span>Falencias y Fallas en Detalle (Errores de Ventas) 👎</span>
+                              </h6>
+                              <ul className="space-y-1.5">
+                                {sc.negatives.map((neg: string, nIdx: number) => (
+                                  <li key={nIdx} className="text-xs text-neutral-300 font-sans flex items-start gap-1.5 leading-relaxed">
+                                    <span className="text-red-500 font-bold shrink-0">✕</span>
+                                    <span>{neg}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+
+                          {/* Corrective script */}
+                          <div className="space-y-2 bg-[#050508] p-3.5 rounded-xl border border-white/5">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[9.5px] font-mono text-cyan-400 uppercase font-black">Estructura Guión de Re-diseño Recomendado:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(sc.redesign)}
+                                className="px-2 py-0.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-white/5 tracking-wider rounded text-[8.5px] font-mono cursor-pointer transition-colors"
+                              >
+                                Copiar Guión
+                              </button>
+                            </div>
+                            <pre className="font-mono text-[10px] text-zinc-300 leading-relaxed bg-black/50 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap select-text max-h-44 scrollbar-thin scrollbar-thumb-zinc-850">
+                              {sc.redesign}
+                            </pre>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Download button row */}
+                    <div className="pt-4 flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-white/5">
+                      <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                        Wentix WhatsApp Sales Decoder AI • 100% Gratuito
+                      </p>
+                      
                       <button
-                        onClick={() => setVideoDemoResult(null)}
-                        className="px-3 py-1 bg-neutral-900 hover:bg-neutral-800 rounded-lg text-[10px] font-mono text-neutral-300 border border-white/5 cursor-pointer"
+                        type="button"
+                        onClick={handleDownloadWaReport}
+                        className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:bg-emerald-400 text-neutral-950 font-black text-xs font-mono rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-emerald-500/10"
                       >
-                        Crear Nuevo
+                        <Download className="w-4 h-4 text-neutral-950" />
+                        <span>Descargar Reporte en Documento (.txt) 💾</span>
                       </button>
                     </div>
 
-                    {/* Simulating phone mockups side-by-side with ticking counters */}
-                    <div className="space-y-3.5">
-                      <h4 className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest block font-bold border-b border-white/5 pb-2">
-                        Monitor de Métricas en Redes Sociales (Actualizado en tiempo real)
-                      </h4>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* TikTok Card */}
-                        <div className="p-4 bg-neutral-900 border border-white/5 rounded-xl space-y-3 text-center">
-                          <span className="text-[9px] font-mono bg-black text-white px-2 py-0.5 rounded border border-white/10 font-bold uppercase">
-                            🎵 TIKTOK ACTIVE
-                          </span>
-                          <div className="space-y-1">
-                            <span className="block text-lg font-bold text-white font-mono">
-                              {mockStatsTikTok.views.toLocaleString()}
-                            </span>
-                            <span className="text-[9px] text-neutral-400 block font-mono">Views simulados</span>
-                          </div>
-                          <div className="flex justify-center gap-4 text-[10px] text-neutral-400 font-mono pt-2 border-t border-white/5">
-                            <span className="flex items-center gap-1">❤️ {mockStatsTikTok.likes}</span>
-                            <span className="flex items-center gap-1">🔗 {mockStatsTikTok.shares}</span>
-                          </div>
-                        </div>
-
-                        {/* Instagram Reels Card */}
-                        <div className="p-4 bg-neutral-900 border border-white/5 rounded-xl space-y-3 text-center">
-                          <span className="text-[9px] font-mono bg-linear-to-tr from-yellow-500 via-pink-500 to-purple-600 text-white px-2 py-0.5 rounded font-bold uppercase">
-                            📸 INSTAGRAM REELS
-                          </span>
-                          <div className="space-y-1">
-                            <span className="block text-lg font-bold text-white font-mono">
-                              {mockStatsInsta.views.toLocaleString()}
-                            </span>
-                            <span className="text-[9px] text-neutral-400 block font-mono">Views simulados</span>
-                          </div>
-                          <div className="flex justify-center gap-4 text-[10px] text-neutral-400 font-mono pt-2 border-t border-white/5">
-                            <span className="flex items-center gap-1">❤️ {mockStatsInsta.likes}</span>
-                            <span className="flex items-center gap-1">🔗 {mockStatsInsta.shares}</span>
-                          </div>
-                        </div>
-
-                        {/* YouTube Shorts Card */}
-                        <div className="p-4 bg-neutral-900 border border-white/5 rounded-xl space-y-3 text-center">
-                          <span className="text-[9px] font-mono bg-red-600 text-white px-2 py-0.5 rounded font-bold uppercase">
-                            📺 YT SHORTS
-                          </span>
-                          <div className="space-y-1">
-                            <span className="block text-lg font-bold text-white font-mono">
-                              {mockStatsShorts.views.toLocaleString()}
-                            </span>
-                            <span className="text-[9px] text-neutral-400 block font-mono">Views simulados</span>
-                          </div>
-                          <div className="flex justify-center gap-4 text-[10px] text-neutral-400 font-mono pt-2 border-t border-white/5">
-                            <span className="flex items-center gap-1">❤️ {mockStatsShorts.likes}</span>
-                            <span className="flex items-center gap-1">🔗 {mockStatsShorts.shares}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-neutral-900 border border-white/5 rounded-xl space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Terminal className="text-cyan-400 w-4 h-4 shrink-0" />
-                        <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest font-black">
-                          LOG DE SALIDA DE COLA
-                        </span>
-                      </div>
-                      <div className="space-y-1 bg-black p-3 rounded-lg font-mono text-[10px] text-zinc-400 max-h-36 overflow-y-auto no-scrollbar">
-                        <p className="text-emerald-400">⚡ [SYS] [OK] Render sequence initialized successfully.</p>
-                        <p>[SYS] Guión procesado: "{videoDemoResult.prompt.substring(0, 50)}..."</p>
-                        <p>[RENDER] Locución generada utilizando {videoDemoResult.voice}</p>
-                        <p>[RENDER] Inserción de subtítulos dinámicos de colores completada.</p>
-                        <p>[UPLOADER] Autenticando canal principal canal @WentixCreator...</p>
-                        <p className="text-cyan-400">[CONNECTED] Token oAuth de YouTube Shorts - Sesión Abierta.</p>
-                        <p className="text-cyan-400">[CONNECTED] API de Meta Reels - Publicación Aprobada.</p>
-                        <p className="text-cyan-400">[CONNECTED] API de TikTok Business - Subida de fichero máster completada.</p>
-                        <p className="text-emerald-400 font-black">✓ [OK] ¡Entregado de manera global de forma perfecta!</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Progress rendering states */}
-                {isPlayingVideoDemo && (
-                  <div className="space-y-2 bg-neutral-900 border border-white/5 p-4 rounded-xl">
-                    <div className="flex items-center justify-between text-xs text-neutral-400 font-mono">
-                      <span>Consola de Renderizado en la Nube</span>
-                      <span>{videoProgress}%</span>
-                    </div>
-                    <div className="w-full bg-neutral-950 rounded-full h-1.5 overflow-hidden">
-                      <div 
-                        className="bg-linear-to-r from-cyan-400 to-purple-500 h-1.5 rounded-full transition-all duration-300" 
-                        style={{ width: `${videoProgress}%` }}
-                      />
-                    </div>
-                    <div className="text-[9.5px] font-mono text-neutral-400 pt-1 space-y-1 h-20 overflow-y-auto no-scrollbar">
-                      {videoSteps.slice(0, Math.floor((videoProgress / 100) * videoSteps.length) + 1).map((stp, idx) => (
-                        <p key={idx} className="animate-pulse">{stp}</p>
-                      ))}
-                    </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* SIMULATOR 2: CONTENT MACHINE CAROUSEL & THREADS */}
+            {/* SIMULATOR: RADAR WENTIX AI WIND (LANDING PORTFOLIO SCREEN WITHOUT COMPROMISING GRAPHICS) */}
+                        {activeDemoAppId === "saas-radar-winner" && (
+              <div className="text-left space-y-12" id="simulator-radar-winner">
+                
+                {/* BRAND HERO HEADER CONTAINER */}
+                <div className="relative overflow-hidden bg-gradient-to-b from-[#090d16] via-[#05050a] to-[#040406] p-8 md:p-12 rounded-3xl border border-white/10 shadow-2xl">
+                  
+                  {/* Glowing ambient dots in the background */}
+                  <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+                  <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+                  {/* Micro pill badge on top */}
+                  <div className="flex justify-center md:justify-start">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-950/60 border border-cyan-500/35 text-cyan-400 rounded-full text-[10px] font-mono font-black tracking-widest uppercase shadow-sm shadow-cyan-500/10 animate-pulse">
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                      PRESENTANDO WENTIX WINS - RADAR AI
+                    </span>
+                  </div>
+
+                  {/* Headline & Description */}
+                  <div className="mt-6 max-w-4xl space-y-4 text-center md:text-left">
+                    <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-none font-sans">
+                      El Radar de <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400">Productos Ganadores</span> más Potente de Latinoamérica
+                    </h2>
+                    <p className="text-sm md:text-base text-zinc-400 leading-relaxed font-sans max-w-3xl">
+                      Deja de improvisar e imitar tiendas saturadas. Wentix Wins Radar AI es una herramienta de clase mundial que escanea y rastrea el inventario físico en vivo de bodegas en Chile, Colombia, Ecuador y Guatemala. Descubre tendencias de escalado real antes de que se saturen en Ads.
+                    </p>
+                  </div>
+
+                  {/* Action row */}
+                  <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = document.getElementById("pago-unico-compra-form");
+                        if (target) {
+                          target.scrollIntoView({ behavior: "smooth" });
+                          onShowToast("Redireccionando al formulario de compra...");
+                        }
+                      }}
+                      className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-black font-black text-xs font-sans uppercase tracking-wider rounded-xl shadow-lg shadow-cyan-500/20 transition-all hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Zap className="w-4 h-4 text-black fill-black" />
+                      <span>Adquirir Licencia Wentix Wins 📡</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = document.getElementById("demo-video-walkthrough-section");
+                        if (target) {
+                          target.scrollIntoView({ behavior: "smooth" });
+                          onShowToast("Abriendo video demostrativo...");
+                        }
+                      }}
+                      className="w-full sm:w-auto px-6 py-3.5 bg-neutral-900 hover:bg-neutral-800 text-zinc-200 hover:text-white border border-white/10 text-xs font-sans font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Video className="w-4 h-4 text-cyan-400" />
+                      <span>Ver Video Demostrativo 📺</span>
+                    </button>
+                  </div>
+
+                  {/* Country coverage markers */}
+                  <div className="mt-10 pt-8 border-t border-white/5 flex flex-wrap items-center justify-center md:justify-start gap-6 text-xs text-zinc-500 font-mono">
+                    <span className="text-zinc-404 uppercase tracking-wider text-[10px] font-bold">Cobertura de Bodegas Localizadas:</span>
+                    <div className="flex flex-wrap gap-3">
+                      <span className="px-2.5 py-1 bg-neutral-900 border border-white/5 rounded-lg text-white flex items-center gap-1.5">
+                        <span>🇨🇱</span> Chile
+                      </span>
+                      <span className="px-2.5 py-1 bg-neutral-900 border border-white/5 rounded-lg text-white flex items-center gap-1.5">
+                        <span>🇨🇴</span> Colombia
+                      </span>
+                      <span className="px-2.5 py-1 bg-neutral-900 border border-white/5 rounded-lg text-white flex items-center gap-1.5">
+                        <span>🇪🇨</span> Ecuador
+                      </span>
+                      <span className="px-2.5 py-1 bg-neutral-900 border border-white/5 rounded-lg text-white flex items-center gap-1.5">
+                        <span>🇬🇹</span> Guatemala
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+
+
+
+                {/* THE PORTFOLIO WALKTHROUGH VIDEO HERO SHOWCASE SECTION */}
+                <div id="demo-video-walkthrough-section" className="bg-[#090a0f] border border-white/10 rounded-3xl p-6 md:p-8 space-y-8 relative shadow-2xl">
+                  
+                  {/* Glowing light background accent */}
+                  <div className="absolute top-12 right-12 w-64 h-64 bg-cyan-500/5 rounded-full blur-[90px] pointer-events-none" />
+
+                  {/* Icon & Section title */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/5">
+                    <div>
+                      <span className="text-[10px] font-mono tracking-widest text-[#22d3ee] font-black block uppercase">
+                        MATERIAL DEMOSTRATIVO EXCLUSIVO
+                      </span>
+                      <h3 className="text-xl md:text-2xl font-extrabold text-white font-sans tracking-tight mt-1 flex items-center gap-2 text-left">
+                        <Video className="w-5 h-5 text-cyan-400" />
+                        Video Oficial de Funcionamiento
+                      </h3>
+                      <p className="text-xs text-zinc-400 mt-0.5 font-sans text-left">
+                        Visualiza de primera mano cómo funciona nuestro scraper, el monitoreo de existencias y los embudos directos de espionaje.
+                      </p>
+                    </div>
+
+                    {/* Quick status label */}
+                    <div className="self-start md:self-center px-3 py-1.5 bg-[#0c222b] text-cyan-400 border border-cyan-500/20 rounded-lg text-xs font-mono font-semibold">
+                      UHD 4K RESOLUTION
+                    </div>
+                  </div>
+
+                  {/* Immersive centered clean player frame */}
+                  <div className="max-w-5xl mx-auto w-full">
+                    <div className="relative w-full aspect-video rounded-2xl bg-black border border-white/10 shadow-2xl overflow-hidden group/player">
+                      <video
+                        src="https://qoujzzazlzdxfmitqmcd.supabase.co/storage/v1/object/sign/videos/radarwins1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mNTRlYTIxOC04N2E4LTQ3Y2MtOTZmNS00N2E1MjNmMjg1M2YiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MvcmFkYXJ3aW5zMS5tcDQiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzgxNzM3NzY1LCJleHAiOjMzNTg1Mzc3NjV9.WE6cxGHnlrel_1rIkEvLNxA_yqGlpPsCEbKPZMXPAxU"
+                        className="w-full h-full object-cover rounded-2xl"
+                        controls
+                        autoPlay
+                        loop
+                        playsInline
+                      />
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            )}{/* SIMULATOR 2: CONTENT MACHINE CAROUSEL & THREADS */}
             {activeDemoAppId === "saas-content" && (
               <div className="space-y-6 relative" id="simulator-carousel">
                 <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">

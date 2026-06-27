@@ -152,6 +152,18 @@ export const INITIAL_AI_TOOLS: AITool[] = [
 
 export const INITIAL_GITHUB_REPOS: GitHubRepo[] = [
   {
+    id: "github-stack-ia",
+    name: "wentix-stack",
+    owner: "wentix-ai",
+    description: "Stack IA + Automatización de alto rendimiento: Ollama + n8n + Plane locales sobre Docker Compose. Sustituye SaaS pesados y de coste alto.",
+    stars: 4200,
+    forks: 850,
+    language: "DockerCompose",
+    tags: ["Ollama", "n8n", "Plane", "Self-Hosted", "Avanzado"],
+    category: "Open Source AI",
+    url: "https://github.com/n8n-io/n8n"
+  },
+  {
     id: "github-openwa",
     name: "OpenWA",
     owner: "rmyndharis",
@@ -159,7 +171,7 @@ export const INITIAL_GITHUB_REPOS: GitHubRepo[] = [
     stars: 1250,
     forks: 340,
     language: "TypeScript",
-    tags: ["WhatsApp API", "Self-Hosted", "NestJS", "Docker"],
+    tags: ["WhatsApp API", "Self-Hosted", "NestJS", "Docker", "Para Principiantes"],
     category: "Developer Tools",
     url: "https://github.com/rmyndharis/OpenWA"
   },
