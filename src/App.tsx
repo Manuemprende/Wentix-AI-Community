@@ -65,6 +65,16 @@ import { WentixLogo } from "./components/WentixLogo";
 import SaaSStore from "./components/SaaSStore";
 import AIZeroToPro from "./components/AIZeroToPro";
 
+type RadarArticlePayload = Partial<ResourceArticle> & {
+  title?: string;
+  name?: string;
+  summary?: string;
+  description?: string;
+  read_time?: string;
+  publishedAt?: string;
+  difficulty?: "Principiante" | "Intermedio" | "Avanzado";
+};
+
 export default function App() {
   // Main Databases (Persisted locally in the session/localStorage to show the CMS works in real-time!)
   const [tools, setTools] = useState<AITool[]>(() => {
@@ -128,6 +138,44 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_PROMPTS_LIBRARY;
   });
 
+  const normalizeImportedPrompt = (raw: any): PromptItem | null => {
+    const title = String(raw?.title || "").trim();
+    const promptText = String(raw?.promptText || "").trim();
+    if (!title || !promptText) return null;
+
+    const difficulty = raw?.difficulty === "Principiante" || raw?.difficulty === "Intermedio" || raw?.difficulty === "Avanzado"
+      ? raw.difficulty
+      : "Intermedio";
+
+    return {
+      id: String(raw.id || `prompt-${Date.now()}-${Math.random().toString(36).slice(2)}`),
+      title,
+      promptText,
+      description: String(raw.description || "Prompt externo modelado para Wentix en español.").trim(),
+      model: String(raw.model || "ChatGPT"),
+      category: String(raw.category || "Prompts"),
+      difficulty,
+      popularCount: Number(raw.popularCount || 1000)
+    };
+  };
+
+  const mergePromptsAtTop = (incoming: PromptItem[], existing: PromptItem[]) => {
+    const seen = new Set<string>();
+    const merged: PromptItem[] = [];
+
+    [...incoming, ...existing].forEach((prompt) => {
+      const key = prompt.promptText.slice(0, 260).trim().toLowerCase();
+      const idKey = String(prompt.id || "").trim().toLowerCase();
+      const dedupeKey = key || idKey;
+      if (!dedupeKey || seen.has(dedupeKey)) return;
+      seen.add(dedupeKey);
+      if (idKey) seen.add(idKey);
+      merged.push(prompt);
+    });
+
+    return merged;
+  };
+
   const [workflows, setWorkflows] = useState<WorkflowItem[]>(() => {
     const saved = localStorage.getItem("wentix_workflows");
     return saved ? JSON.parse(saved) : INITIAL_WORKFLOWS;
@@ -137,6 +185,62 @@ export default function App() {
     const saved = localStorage.getItem("wentix_articles");
     return saved ? JSON.parse(saved) : INITIAL_RESOURCE_ARTICLES;
   });
+
+  const normalizeArticleTitle = (title: string) => title.trim().toLocaleLowerCase("es");
+
+  const normalizeRadarArticle = (raw: RadarArticlePayload, index: number): ResourceArticle | null => {
+    const title = (raw.title || raw.name || "").trim();
+    if (!title) return null;
+
+    const tags = Array.isArray(raw.tags)
+      ? raw.tags.filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
+      : [];
+
+    return {
+      id: raw.id || `radar-${Date.now()}-${index}`,
+      title,
+      category: raw.category || "Radar IA",
+      difficulty: raw.difficulty,
+      readTime: raw.readTime || raw.read_time || "4 min de lectura",
+      excerpt: raw.excerpt || raw.summary || raw.description || "Insight detectado por el radar Wentix.",
+      author: raw.author || "Wentix Radar",
+      date: raw.date || raw.publishedAt || new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }),
+      tags: tags.length > 0 ? tags : ["IA", "Radar"],
+      views: typeof raw.views === "number" ? raw.views : Math.floor(1400 + Math.random() * 5200),
+      imageUrl: raw.imageUrl,
+      sourceUrl: raw.sourceUrl,
+      learningGoals: Array.isArray((raw as any).learningGoals) ? (raw as any).learningGoals : undefined,
+      contentSections: Array.isArray((raw as any).contentSections) ? (raw as any).contentSections : undefined,
+      actionSteps: Array.isArray((raw as any).actionSteps) ? (raw as any).actionSteps : undefined,
+      closingNote: typeof (raw as any).closingNote === "string" ? (raw as any).closingNote : undefined
+    };
+  };
+
+  const extractRadarArticles = (data: any): ResourceArticle[] => {
+    const candidates = Array.isArray(data)
+      ? data
+      : data?.articles || data?.newArticles || data?.createdArticles || data?.importedArticles || data?.items || data?.results || (data?.article ? [data.article] : []);
+
+    if (!Array.isArray(candidates)) return [];
+
+    return candidates
+      .map((item: any, index: number) => normalizeRadarArticle(item?.article || item, index))
+      .filter((article: ResourceArticle | null): article is ResourceArticle => article !== null);
+  };
+
+  const mergeArticlesAtTop = (incoming: ResourceArticle[], current: ResourceArticle[]) => {
+    const seenTitles = new Set<string>();
+    const merged: ResourceArticle[] = [];
+
+    [...incoming, ...current].forEach((article) => {
+      const key = normalizeArticleTitle(article.title);
+      if (!key || seenTitles.has(key)) return;
+      seenTitles.add(key);
+      merged.push(article);
+    });
+
+    return merged;
+  };
 
   // User Bookmark storage
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
@@ -156,6 +260,56 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("wentix_prompts", JSON.stringify(prompts));
   }, [prompts]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRadarPrompts = async () => {
+      try {
+        const response = await fetch("/api/gemini/prompts?limit=300");
+        if (!response.ok) return;
+        const data = await response.json();
+        const importedPrompts = Array.isArray(data.prompts)
+          ? data.prompts.map(normalizeImportedPrompt).filter(Boolean) as PromptItem[]
+          : [];
+        if (!cancelled && importedPrompts.length) {
+          setPrompts((prev) => mergePromptsAtTop(importedPrompts, prev));
+        }
+      } catch (err) {
+        console.warn("Could not load PromptRadar library:", err);
+      }
+    };
+
+    loadRadarPrompts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRadarArticles = async () => {
+      try {
+        const response = await fetch("/api/gemini/radar/articles?limit=300");
+        if (!response.ok) return;
+        const data = await response.json();
+        const radarArticles = extractRadarArticles(data);
+        if (!cancelled && radarArticles.length) {
+          setArticles((prev) => mergeArticlesAtTop(radarArticles, prev));
+        }
+      } catch (err) {
+        console.warn("Could not load RadarAgent articles:", err);
+      }
+    };
+
+    loadRadarArticles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("wentix_workflows", JSON.stringify(workflows));
@@ -351,6 +505,33 @@ export default function App() {
     trackVisitor();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRadarArticles = async () => {
+      try {
+        const response = await fetch("/api/gemini/radar/articles");
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar los articulos del radar");
+        }
+
+        const data = await response.json();
+        const radarArticles = extractRadarArticles(data);
+        if (!cancelled && radarArticles.length > 0) {
+          setArticles((prev) => mergeArticlesAtTop(radarArticles, prev));
+        }
+      } catch (err) {
+        console.warn("Could not load radar articles from backend: local articles active.", err);
+      }
+    };
+
+    loadRadarArticles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleLeadJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = leadEmailInput.trim();
@@ -440,9 +621,19 @@ export default function App() {
 
   // Scraping URL inputs
   const [scrapeUrl, setScrapeUrl] = useState("");
-  const [scrapeSource, setScrapeSource] = useState("GitHub Trending");
+  const [scrapeSource, setScrapeSource] = useState("Repositorio GitHub");
   const [isScraping, setIsScraping] = useState(false);
   const [scrapingStatusText, setScrapingStatusText] = useState("");
+  const [newsUrl, setNewsUrl] = useState("");
+  const [newsAngle, setNewsAngle] = useState("");
+  const [isModelingNews, setIsModelingNews] = useState(false);
+  const [newsStatusText, setNewsStatusText] = useState("");
+  const [newsBatchUrls, setNewsBatchUrls] = useState("");
+  const [isModelingNewsBatch, setIsModelingNewsBatch] = useState(false);
+  const [isRunningRadar, setIsRunningRadar] = useState(false);
+  const [radarRunStatusText, setRadarRunStatusText] = useState("");
+  const [isRunningPromptRadar, setIsRunningPromptRadar] = useState(false);
+  const [promptRadarStatusText, setPromptRadarStatusText] = useState("");
   
   // Custom manual insert form open state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -711,17 +902,17 @@ export default function App() {
     }, 1200);
   };
 
-  // Integrated Scraper using the server API `/api/gemini/scrape`
+  // Integrated curator using the server API `/api/gemini/scrape`
   const handleUrlScraping = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!scrapeUrl.trim() || isScraping) return;
 
     setIsScraping(true);
-    setScrapingStatusText("Conectando con Firecrawl agent...");
+    setScrapingStatusText("Extrayendo datos reales de la fuente...");
     
     // Step simulation logs
-    setTimeout(() => setScrapingStatusText("Extrayendo metadata limpia y código fuente..."), 800);
-    setTimeout(() => setScrapingStatusText("Enviando a Google Gemini 3.5-Flash para traducción y reescritura SEO técnica..."), 1600);
+    setTimeout(() => setScrapingStatusText("Detectando si es GitHub, herramienta o recurso web..."), 800);
+    setTimeout(() => setScrapingStatusText("Modelando contenido para el catálogo Wentix..."), 1600);
 
     try {
       const response = await fetch("/api/gemini/scrape", {
@@ -748,14 +939,14 @@ export default function App() {
           const parsedRepo: GitHubRepo = {
             id: `repo-${Date.now()}`,
             name: item.title || "Nuevo Repo Procesado",
-            owner: "ScrapedAgent",
+            owner: item.owner || data.extracted?.owner || "WentixCurator",
             description: item.description || "Sin descripción proporcionada",
             stars: item.stars || Math.floor(Math.random() * 2000) + 150,
-            forks: Math.floor((item.stars || 1000) * 0.15),
-            language: "TypeScript",
+            forks: item.forks || data.extracted?.forks || Math.floor((item.stars || 1000) * 0.15),
+            language: item.language || data.extracted?.language || "Open Source",
             tags: item.tags || ["ai", "scraper", "open-source"],
             category: "Open Source AI",
-            url: scrapeUrl.trim()
+            url: data.extracted?.normalizedUrl || scrapeUrl.trim()
           };
           setRepos((prev) => [parsedRepo, ...prev]);
           setActiveTab("repos");
@@ -779,7 +970,7 @@ export default function App() {
             category: item.category || "Herramientas IA",
             score: item.score || 4.8,
             tags: item.tags || ["automatizacion", "wentix-scraped"],
-            url: scrapeUrl.trim(),
+            url: data.extracted?.normalizedUrl || scrapeUrl.trim(),
             stars: item.stars || undefined,
             isLatest: true,
             isTrending: true
@@ -802,10 +993,235 @@ export default function App() {
       }
     } catch (err) {
       console.warn("URL scrape error:", err);
-      showToast("Error al importar la URL. Clave de API o timeout temporal.");
+      showToast("Error al modelar la URL. Revisa que el enlace sea público y vuelve a intentar.");
     } finally {
       setIsScraping(false);
       setScrapingStatusText("");
+    }
+  };
+
+  const handleRunRadarNow = async () => {
+    if (isRunningRadar) return;
+
+    setIsRunningRadar(true);
+    setRadarRunStatusText("Lanzando crawler en segundo plano...");
+
+    try {
+      const response = await fetch("/api/gemini/radar/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          background: true,
+          crawl: true
+        })
+      });
+
+      if (!response.ok && response.status !== 409) {
+        throw new Error("La corrida del radar fallo");
+      }
+
+      setRadarRunStatusText("Crawler activo: descubriendo URLs internas y modelando contenido...");
+
+      for (let attempt = 0; attempt < 60; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const statusResponse = await fetch("/api/gemini/radar/status");
+        if (!statusResponse.ok) continue;
+        const statusData = await statusResponse.json();
+        if (!statusData.running) break;
+        setRadarRunStatusText(`Crawler trabajando en segundo plano... ${attempt + 1}`);
+      }
+
+      const articlesResponse = await fetch("/api/gemini/radar/articles?limit=60");
+      if (!articlesResponse.ok) {
+        throw new Error("No se pudieron cargar los articulos del radar");
+      }
+
+      const data = await articlesResponse.json();
+      const radarArticles = extractRadarArticles(data);
+      if (radarArticles.length > 0) {
+        setArticles((prev) => mergeArticlesAtTop(radarArticles, prev));
+        setActiveTab("home");
+        setRadarRunStatusText(`Radar finalizado: ${radarArticles.length} articulos disponibles.`);
+        showToast(`Radar finalizado: ${radarArticles.length} articulos disponibles en el inicio.`);
+      } else {
+        setRadarRunStatusText("Radar finalizado sin articulos nuevos.");
+        showToast("Radar ejecutado sin articulos nuevos.");
+      }
+    } catch (err) {
+      console.warn("Radar run error:", err);
+      setRadarRunStatusText("Error al ejecutar el radar backend.");
+      showToast("Error al ejecutar el radar. Revisa el backend e intenta nuevamente.");
+    } finally {
+      setIsRunningRadar(false);
+      setTimeout(() => setRadarRunStatusText(""), 4500);
+    }
+  };
+
+  const handleRunPromptRadarNow = async () => {
+    if (isRunningPromptRadar) return;
+
+    setIsRunningPromptRadar(true);
+    setPromptRadarStatusText("Importando prompts.chat en segundo plano...");
+
+    try {
+      const response = await fetch("/api/gemini/prompts/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          background: true,
+          limit: 200
+        })
+      });
+
+      if (!response.ok && response.status !== 409) {
+        throw new Error("La corrida de PromptRadar fallo");
+      }
+
+      setPromptRadarStatusText("PromptRadar activo: filtrando prompts en ingles y modelando metadata en español...");
+
+      for (let attempt = 0; attempt < 60; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const statusResponse = await fetch("/api/gemini/prompts/status");
+        if (!statusResponse.ok) continue;
+        const statusData = await statusResponse.json();
+        if (!statusData.running) break;
+        setPromptRadarStatusText(`PromptRadar trabajando en segundo plano... ${attempt + 1}`);
+      }
+
+      const promptsResponse = await fetch("/api/gemini/prompts?limit=160");
+      if (!promptsResponse.ok) {
+        throw new Error("No se pudieron cargar los prompts importados");
+      }
+
+      const data = await promptsResponse.json();
+      const importedPrompts = Array.isArray(data.prompts)
+        ? data.prompts.map(normalizeImportedPrompt).filter(Boolean) as PromptItem[]
+        : [];
+
+      if (importedPrompts.length > 0) {
+        setPrompts((prev) => mergePromptsAtTop(importedPrompts, prev));
+        setActiveTab("prompts");
+        setPromptRadarStatusText(`PromptRadar finalizado: ${importedPrompts.length} prompts disponibles.`);
+        showToast(`PromptRadar importo ${importedPrompts.length} prompts con metadata en español.`);
+      } else {
+        setPromptRadarStatusText("PromptRadar finalizado sin prompts nuevos.");
+        showToast("PromptRadar ejecutado sin prompts nuevos.");
+      }
+    } catch (err) {
+      console.warn("PromptRadar run error:", err);
+      setPromptRadarStatusText("Error al ejecutar PromptRadar.");
+      showToast("Error al importar prompts. Revisa el backend e intenta nuevamente.");
+    } finally {
+      setIsRunningPromptRadar(false);
+      setTimeout(() => setPromptRadarStatusText(""), 4500);
+    }
+  };
+
+  const handleNewsModeling = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsUrl.trim() || isModelingNews) return;
+
+    setIsModelingNews(true);
+    setNewsStatusText("Leyendo fuente publica...");
+    setTimeout(() => setNewsStatusText("Separando hechos, contexto y ruido..."), 800);
+    setTimeout(() => setNewsStatusText("Reescribiendo como insight Wentix para el inicio..."), 1600);
+
+    try {
+      const response = await fetch("/api/gemini/model-news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: newsUrl.trim(),
+          angle: newsAngle.trim()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("La API de noticias fallo");
+      }
+
+      const data = await response.json();
+      if (data.success && data.article) {
+        const article: ResourceArticle = {
+          id: `news-${Date.now()}`,
+          title: data.article.title,
+          category: data.article.category || "Radar IA",
+          difficulty: data.article.difficulty,
+          readTime: data.article.readTime || "4 min de lectura",
+          excerpt: data.article.excerpt,
+          author: data.article.author || "Wentix Radar",
+          date: data.article.date || new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }),
+          tags: data.article.tags || ["IA", "Tendencias"],
+          views: data.article.views || Math.floor(1400 + Math.random() * 5200)
+        };
+
+        setArticles((prev) => [article, ...prev]);
+        setActiveTab("home");
+        setNewsUrl("");
+        setNewsAngle("");
+        showToast(`Noticia modelada y publicada en el inicio: ${article.title}`);
+      }
+    } catch (err) {
+      console.warn("News modeling error:", err);
+      showToast("Error al modelar la noticia. Usa una URL publica y vuelve a intentar.");
+    } finally {
+      setIsModelingNews(false);
+      setNewsStatusText("");
+    }
+  };
+
+  const handleNewsBatchModeling = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsBatchUrls.trim() || isModelingNewsBatch) return;
+
+    setIsModelingNewsBatch(true);
+    setNewsStatusText("Escaneando fuentes por lote...");
+
+    try {
+      const response = await fetch("/api/gemini/model-news-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          urls: newsBatchUrls,
+          angle: newsAngle.trim(),
+          limit: 6
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("La API batch de noticias fallo");
+      }
+
+      const data = await response.json();
+      const importedArticles: ResourceArticle[] = (data.results || [])
+        .filter((item: any) => item.article)
+        .map((item: any, index: number) => ({
+          id: `news-batch-${Date.now()}-${index}`,
+          title: item.article.title,
+          category: item.article.category || "Radar IA",
+          difficulty: item.article.difficulty,
+          readTime: item.article.readTime || "4 min de lectura",
+          excerpt: item.article.excerpt,
+          author: item.article.author || "Wentix Radar",
+          date: item.article.date || new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }),
+          tags: item.article.tags || ["IA", "Tendencias"],
+          views: item.article.views || Math.floor(1400 + Math.random() * 5200)
+        }));
+
+      if (importedArticles.length > 0) {
+        setArticles((prev) => [...importedArticles, ...prev]);
+        setActiveTab("home");
+        setNewsBatchUrls("");
+        showToast(`Radar Wentix publico ${importedArticles.length} noticias modeladas.`);
+      } else {
+        showToast("No se pudo modelar ninguna fuente del lote.");
+      }
+    } catch (err) {
+      console.warn("News batch modeling error:", err);
+      showToast("Error al escanear el lote. Revisa que las URLs sean publicas.");
+    } finally {
+      setIsModelingNewsBatch(false);
+      setNewsStatusText("");
     }
   };
 
@@ -2208,6 +2624,7 @@ export default function App() {
           <AIZeroToPro 
             onShowToast={showToast} 
             prompts={prompts} 
+            articles={articles}
             bookmarks={bookmarks} 
             onToggleBookmark={toggleBookmark} 
           />
@@ -2238,9 +2655,9 @@ export default function App() {
                   <h2 className="text-2xl font-bold font-display text-white">
                     Célula de Curación Wentix
                   </h2>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    Sincronización automatizada de recursos mediante scraping robótico en tiempo real. Curación automatizada con Gemini 2.0 en español.
-                  </p>
+                    <p className="text-xs text-neutral-400 leading-relaxed">
+                      Extrae datos públicos, detecta repositorios GitHub y modela cada recurso como ficha propia para el catálogo Wentix. No copia contenido: lo reescribe y lo adapta a nuestra plataforma.
+                    </p>
                 </div>
 
                 <div className="lg:col-span-7 bg-neutral-900/50 p-5 rounded-2xl border border-white/5">
@@ -2248,7 +2665,7 @@ export default function App() {
                     <div>
                       <label className="block text-[10px] font-mono text-neutral-400 mb-1.5 uppercase tracking-wider">Origen de Datos</label>
                       <div className="grid grid-cols-3 gap-2">
-                        {["Futurepedia", "GitHub Trending", "There's An AI For That"].map((src) => (
+                        {["Herramienta IA", "Repositorio GitHub", "Artículo / Recurso"].map((src) => (
                           <button
                             key={src}
                             type="button"
@@ -2281,7 +2698,7 @@ export default function App() {
                           disabled={isScraping || !scrapeUrl.trim()}
                           className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 hover:brightness-110 disabled:opacity-50 text-black rounded-xl font-bold text-xs cursor-pointer min-w-[100px]"
                         >
-                          {isScraping ? "Scraping..." : "Iniciar IA"}
+                          {isScraping ? "Modelando..." : "Modelar"}
                         </button>
                       </div>
                     </div>
@@ -2293,6 +2710,124 @@ export default function App() {
                       <div>&gt; [AGENT STATUS]: {scrapingStatusText}</div>
                     </div>
                   )}
+
+                  <div className="mt-5 pt-4 border-t border-white/5 rounded-xl bg-purple-950/10 border border-purple-500/10 p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <label className="block text-[10px] font-mono text-purple-300 uppercase tracking-wider">Radar autonomo backend</label>
+                        <p className="mt-1 text-[10px] text-neutral-500 leading-relaxed">
+                          Ejecuta la cola del radar y publica arriba solo los articulos nuevos por titulo.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRunRadarNow}
+                        disabled={isRunningRadar}
+                        className="shrink-0 px-4 py-2 bg-purple-400 hover:bg-purple-300 disabled:opacity-50 text-black rounded-xl font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        {isRunningRadar ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                        <span>{isRunningRadar ? "Ejecutando..." : "Ejecutar Radar Ahora"}</span>
+                      </button>
+                    </div>
+
+                    {radarRunStatusText && (
+                      <div className="p-3 bg-black rounded-xl border border-white/5 font-mono text-[9px] text-purple-300">
+                        &gt; [RADAR AUTO]: {radarRunStatusText}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 rounded-xl bg-emerald-950/10 border border-emerald-500/10 p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <label className="block text-[10px] font-mono text-emerald-300 uppercase tracking-wider">PromptRadar prompts.chat</label>
+                        <p className="mt-1 text-[10px] text-neutral-500 leading-relaxed">
+                          Importa prompts en ingles y los publica con titulo, descripcion, categoria y nivel en español.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRunPromptRadarNow}
+                        disabled={isRunningPromptRadar}
+                        className="shrink-0 px-4 py-2 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black rounded-xl font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        {isRunningPromptRadar ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                        <span>{isRunningPromptRadar ? "Importando..." : "Importar Prompts"}</span>
+                      </button>
+                    </div>
+
+                    {promptRadarStatusText && (
+                      <div className="p-3 bg-black rounded-xl border border-white/5 font-mono text-[9px] text-emerald-300">
+                        &gt; [PROMPT RADAR]: {promptRadarStatusText}
+                      </div>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleNewsModeling} className="mt-5 pt-4 border-t border-white/5 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <label className="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider">Radar de Noticias IA</label>
+                        <p className="mt-1 text-[10px] text-neutral-500 leading-relaxed">
+                          Pega una fuente publica. Wentix la resume, reescribe y publica como insight del inicio.
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-full border border-cyan-500/20 bg-cyan-950/30 px-2.5 py-1 text-[9px] font-mono font-bold text-cyan-400">
+                        HOME FEED
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-[1.2fr_0.8fr_auto] gap-2">
+                      <input
+                        type="url"
+                        required
+                        value={newsUrl}
+                        onChange={(e) => setNewsUrl(e.target.value)}
+                        placeholder="https://fuente.com/noticia-ia"
+                        className="bg-black border border-white/5 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-650 font-mono"
+                      />
+                      <input
+                        type="text"
+                        value={newsAngle}
+                        onChange={(e) => setNewsAngle(e.target.value)}
+                        placeholder="Angulo: builders, ecommerce, creators..."
+                        className="bg-black border border-white/5 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-650"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isModelingNews || !newsUrl.trim()}
+                        className="px-4 py-2 bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 text-black rounded-xl font-bold text-xs cursor-pointer min-w-[110px]"
+                      >
+                        {isModelingNews ? "Publicando..." : "Publicar"}
+                      </button>
+                    </div>
+                  </form>
+
+                  {(isModelingNews || isModelingNewsBatch) && (
+                    <div className="mt-3 p-3 bg-black rounded-xl border border-white/5 font-mono text-[9px] text-cyan-400 space-y-1">
+                      <div>&gt; [RADAR STATUS]: {newsStatusText}</div>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleNewsBatchModeling} className="mt-3 rounded-xl border border-cyan-500/10 bg-cyan-950/10 p-3 space-y-2">
+                    <label className="block text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Radar por lote</label>
+                    <textarea
+                      rows={3}
+                      value={newsBatchUrls}
+                      onChange={(e) => setNewsBatchUrls(e.target.value)}
+                      placeholder={"https://fuente.com/noticia-1\nhttps://otrafuente.com/reporte-ia\nhttps://github.com/org/repo"}
+                      className="w-full bg-black border border-white/5 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-650 font-mono resize-none"
+                    />
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-neutral-500">Una URL por linea. Maximo 6 por corrida para evitar timeouts.</span>
+                      <button
+                        type="submit"
+                        disabled={isModelingNewsBatch || !newsBatchUrls.trim()}
+                        className="px-4 py-2 bg-neutral-100 hover:bg-white disabled:opacity-50 text-black rounded-xl font-bold text-xs cursor-pointer"
+                      >
+                        {isModelingNewsBatch ? "Escaneando..." : "Escanear lote"}
+                      </button>
+                    </div>
+                  </form>
 
                   {/* Manual add button toggle */}
                   <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] text-neutral-400">
@@ -2358,10 +2893,10 @@ export default function App() {
           {/* 5. RECURSOS / BLOG SELECTION STYLED NOTION + MEDIUM */}
           <section className="px-4 sm:px-6 lg:px-8 py-16 max-w-7xl mx-auto border-t border-white/5" id="blog-recursos">
         <div className="mb-10 text-center max-w-3xl mx-auto">
-          <div className="text-xs font-bold text-purple-400 font-mono uppercase tracking-widest mb-1.5">CONOCIMIENTO EXCLUSIVO</div>
-          <h2 className="text-3xl font-bold font-display text-white tracking-tight">Hacks de Monetización & Tutoriales IA</h2>
+          <div className="text-xs font-bold text-purple-400 font-mono uppercase tracking-widest mb-1.5">RADAR WENTIX</div>
+          <h2 className="text-3xl font-bold font-display text-white tracking-tight">Noticias, Hacks & Tutoriales IA</h2>
           <p className="text-xs text-neutral-400 mt-2">
-            Artículos profundos redactados para creators, ecommerce y emprendedores digitales.
+            Tendencias modeladas desde fuentes públicas y convertidas en acciones para creators, ecommerce y emprendedores digitales.
           </p>
         </div>
 
@@ -2376,7 +2911,7 @@ export default function App() {
                   <span className="text-cyan-400 font-bold bg-cyan-950/40 px-2 py-0.5 rounded">
                     {art.category}
                   </span>
-                  <span>{art.readTime}</span>
+                  <span>{art.difficulty || "Intermedio"} · {art.readTime}</span>
                 </div>
 
                 <h3 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors mb-3.5 leading-snug">

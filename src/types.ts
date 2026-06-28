@@ -58,6 +58,7 @@ export interface ResourceArticle {
   id: string;
   title: string;
   category: string;
+  difficulty?: "Principiante" | "Intermedio" | "Avanzado";
   readTime: string;
   excerpt: string;
   author: string;
@@ -65,6 +66,11 @@ export interface ResourceArticle {
   tags: string[];
   views: number;
   imageUrl?: string;
+  sourceUrl?: string;
+  learningGoals?: string[];
+  contentSections?: { heading: string; body: string }[];
+  actionSteps?: string[];
+  closingNote?: string;
 }
 
 export interface StackItem {

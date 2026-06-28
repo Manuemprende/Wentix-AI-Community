@@ -31,12 +31,13 @@ import {
   Play,
   MessageSquare
 } from "lucide-react";
-import { PromptItem } from "../types";
+import { PromptItem, ResourceArticle } from "../types";
 import { SKILLS_CATEGORIES, SKILLS_PACKS, PLAN_DAYS, SKILLS_FAQS } from "../skills_data";
 
 interface AIZeroToProProps {
   onShowToast: (message: string) => void;
   prompts?: PromptItem[];
+  articles?: ResourceArticle[];
   bookmarks?: string[];
   onToggleBookmark?: (id: string) => void;
 }
@@ -51,11 +52,18 @@ interface GuideMetadata {
   lessonNum: string;
   type: string;
   tags: string[];
+  sourceUrl?: string;
+  imported?: boolean;
+  learningGoals?: string[];
+  contentSections?: { heading: string; body: string }[];
+  actionSteps?: string[];
+  closingNote?: string;
 }
 
 export default function AIZeroToPro({ 
   onShowToast, 
   prompts = [], 
+  articles = [],
   bookmarks = [], 
   onToggleBookmark 
 }: AIZeroToProProps) {
@@ -1177,6 +1185,27 @@ Empezá con la primera pregunta.`
     setSelectedGuideId(null);
   };
 
+  const radarGuides: GuideMetadata[] = articles.map((article, index) => ({
+    id: `radar-session-${article.id}`,
+    title: article.title.replace(/^Radar Wentix:\s*/i, ""),
+    subtitle: article.category || "Sesión modelada desde TodoDeIA",
+    lead: article.excerpt,
+    level: article.difficulty === "Avanzado" ? "avanzado" : article.difficulty === "Intermedio" ? "intermedio" : "principiante",
+    duration: article.readTime || "4 min",
+    lessonNum: `R${String(index + 1).padStart(2, "0")}`,
+    type: "Radar",
+    tags: article.tags?.slice(0, 3) || ["IA", "Radar"],
+    sourceUrl: article.sourceUrl,
+    imported: true,
+    learningGoals: article.learningGoals,
+    contentSections: article.contentSections,
+    actionSteps: article.actionSteps,
+    closingNote: article.closingNote
+  }));
+  const academyGuides = [...radarGuides, ...METADATA];
+  const activeGuide = academyGuides.find((guide) => guide.id === selectedGuideId);
+  const activeRadarGuide = activeGuide?.imported ? activeGuide : null;
+
   return (
     <div className="w-full bg-neutral-950/40 rounded-3xl border border-white/5 overflow-hidden shadow-2xl backdrop-blur-md" id="wentix-ai-0-to-pro-academy">
       
@@ -1430,13 +1459,13 @@ Empezá con la primera pregunta.`
                 </p>
               </div>
               <div className="text-[10px] font-mono text-neutral-500 bg-neutral-900 border border-white/5 px-2.5 py-1 rounded-full shrink-0">
-                MÓDULOS: {METADATA.filter(m => m.level === activeLevel).length}
+                MÓDULOS: {academyGuides.filter(m => m.level === activeLevel).length}
               </div>
             </div>
 
-            {METADATA.filter((m) => m.level === activeLevel).length > 0 ? (
+            {academyGuides.filter((m) => m.level === activeLevel).length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {METADATA.filter((m) => m.level === activeLevel).map((guide) => (
+                {academyGuides.filter((m) => m.level === activeLevel).map((guide) => (
                   <div 
                     key={guide.id}
                     onClick={() => {
@@ -1448,7 +1477,7 @@ Empezá con la primera pregunta.`
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <span className="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/30 border border-cyan-800/15 px-2 py-0.5 rounded uppercase">
-                          Lección {guide.lessonNum}
+                          {guide.imported ? "Radar" : "Lección"} {guide.lessonNum}
                         </span>
                         <span className="text-xs font-mono text-neutral-500 flex items-center gap-1 font-bold">
                           <Clock className="w-3 h-3 text-neutral-500" />
@@ -1534,16 +1563,130 @@ Empezá con la primera pregunta.`
             <div className="hidden sm:flex items-center gap-1.5 text-xs text-neutral-400 font-mono">
               <span className="uppercase text-amber-400 font-black">{activeLevel}</span>
               <span>/</span>
-              <span className="text-neutral-500 truncate max-w-xs">{METADATA.find(m => m.id === selectedGuideId)?.title}</span>
+              <span className="text-neutral-500 truncate max-w-xs">{activeGuide?.title}</span>
             </div>
 
             <span className="text-[10px] bg-cyan-950/40 text-cyan-400 border border-cyan-800/30 px-3 py-1 rounded-full font-mono font-bold tracking-wider uppercase">
-              {METADATA.find(m => m.id === selectedGuideId)?.duration} LECTURA
+              {activeGuide?.duration} LECTURA
             </span>
           </div>
 
           {/* DYNAMIC GUIDE CONTAINER */}
           <div className="p-6 md:p-10 divide-y divide-white/5">
+            {activeRadarGuide && (
+              <div className="space-y-8 pb-10">
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-950/20 border border-cyan-500/20 text-cyan-400 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Sesión modelada · {activeRadarGuide.level}</span>
+                  </div>
+                  <h1 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight leading-none font-display uppercase">
+                    {activeRadarGuide.title}
+                  </h1>
+                  <p className="text-sm text-neutral-350 leading-relaxed max-w-3xl">
+                    {activeRadarGuide.lead}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="rounded-2xl bg-neutral-950/70 border border-white/5 p-4">
+                    <span className="block text-[10px] font-mono text-neutral-500 uppercase">Nivel</span>
+                    <strong className="mt-1 block text-sm text-white capitalize">{activeRadarGuide.level}</strong>
+                  </div>
+                  <div className="rounded-2xl bg-neutral-950/70 border border-white/5 p-4">
+                    <span className="block text-[10px] font-mono text-neutral-500 uppercase">Duración</span>
+                    <strong className="mt-1 block text-sm text-white">{activeRadarGuide.duration}</strong>
+                  </div>
+                  <div className="rounded-2xl bg-neutral-950/70 border border-white/5 p-4">
+                    <span className="block text-[10px] font-mono text-neutral-500 uppercase">Formato</span>
+                    <strong className="mt-1 block text-sm text-white">Clase interna Wentix</strong>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.78fr] gap-4">
+                  <div className="rounded-3xl bg-neutral-950/50 border border-white/5 p-5 md:p-6 space-y-4">
+                    <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-widest font-mono">Lo que vas a dominar</h3>
+                    <div className="space-y-3">
+                      {(activeRadarGuide.learningGoals?.length ? activeRadarGuide.learningGoals : [
+                        "Entender el concepto sin depender de la fuente original.",
+                        "Aplicarlo dentro de un flujo real de trabajo en Wentix.",
+                        "Convertir la idea en una acción concreta para tu operación."
+                      ]).map((goal) => (
+                        <div key={goal} className="flex items-start gap-3 rounded-2xl bg-neutral-900/60 border border-white/5 p-3">
+                          <CheckCircle2 className="w-4 h-4 mt-0.5 text-cyan-400 shrink-0" />
+                          <p className="text-xs md:text-sm text-neutral-300 leading-relaxed">{goal}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl bg-neutral-950/50 border border-white/5 p-5 md:p-6 space-y-4">
+                    <h3 className="text-sm font-bold text-amber-400 uppercase tracking-widest font-mono">Modelo Wentix</h3>
+                    <p className="text-sm text-neutral-300 leading-relaxed">
+                      Esta clase usa la fuente pública como insumo, pero queda reestructurada como una pieza interna: contexto, desarrollo, decisión práctica y aplicación para la ruta de academia.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {activeRadarGuide.tags.map((tag) => (
+                        <span key={tag} className="text-[10px] font-mono px-2 py-1 rounded bg-neutral-900 border border-white/5 text-neutral-400">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {(activeRadarGuide.contentSections?.length ? activeRadarGuide.contentSections : [
+                    { heading: "Contexto de la lección", body: activeRadarGuide.lead },
+                    { heading: "Aplicación en Wentix", body: "Toma la idea central, conviértela en un criterio operativo y úsala para decidir qué crear, mejorar o automatizar dentro de tu flujo de trabajo." }
+                  ]).map((section, index) => (
+                    <article key={`${section.heading}-${index}`} className="rounded-3xl bg-neutral-950/60 border border-white/5 p-5 md:p-7 space-y-3">
+                      <div className="flex items-center gap-2 text-cyan-400 font-mono text-xs uppercase tracking-widest font-bold">
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <span className="h-px bg-cyan-500/30 w-10" />
+                        <span>Bloque de clase</span>
+                      </div>
+                      <h2 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase font-display">
+                        {section.heading}
+                      </h2>
+                      <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-line">
+                        {section.body}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="rounded-3xl bg-cyan-950/15 border border-cyan-500/15 p-5 md:p-6 space-y-4">
+                  <h3 className="text-sm font-bold text-cyan-300 uppercase tracking-widest font-mono">Ejercicio Wentix</h3>
+                  <ol className="space-y-3">
+                    {(activeRadarGuide.actionSteps?.length ? activeRadarGuide.actionSteps : [
+                      "Resume la idea en una regla de una línea.",
+                      "Define dónde se aplica dentro de tu negocio o aprendizaje.",
+                      "Crea un prompt o checklist corto para repetirlo esta semana."
+                    ]).map((step, index) => (
+                      <li key={step} className="flex gap-3 text-sm text-neutral-300 leading-relaxed">
+                        <span className="w-6 h-6 rounded-full bg-cyan-400 text-black text-[10px] font-black flex items-center justify-center shrink-0">
+                          {index + 1}
+                        </span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                <div className="rounded-3xl bg-neutral-950/50 border border-white/5 p-5 md:p-6 space-y-3">
+                  <h3 className="text-sm font-bold text-white uppercase tracking-widest font-mono">Cierre operativo</h3>
+                  <p className="text-sm text-neutral-300 leading-relaxed">
+                    {activeRadarGuide.closingNote || "La meta no es memorizar la fuente: es convertirla en un sistema aplicable dentro de Wentix."}
+                  </p>
+                  {activeRadarGuide.sourceUrl && (
+                    <p className="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">
+                      Fuente pública usada solo como referencia de investigación.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
             
             {/* 1. GUÍA: ¿QUÉ VALE LA PENA AUTOMATIZAR? */}
             {selectedGuideId === "que-automatizar" && (
