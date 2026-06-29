@@ -268,14 +268,14 @@ export default function App() {
 
     const loadRadarPrompts = async () => {
       try {
-        const response = await fetch("/api/gemini/prompts?limit=300");
+        const response = await fetch("/api/gemini/prompts?limit=1000");
         if (!response.ok) return;
         const data = await response.json();
         const importedPrompts = Array.isArray(data.prompts)
           ? data.prompts.map(normalizeImportedPrompt).filter(Boolean) as PromptItem[]
           : [];
         if (!cancelled && importedPrompts.length) {
-          setPrompts((prev) => mergePromptsAtTop(importedPrompts, prev));
+          setPrompts(importedPrompts);
         }
       } catch (err) {
         console.warn("Could not load PromptRadar library:", err);
@@ -294,12 +294,12 @@ export default function App() {
 
     const loadRadarArticles = async () => {
       try {
-        const response = await fetch("/api/gemini/radar/articles?limit=300");
+        const response = await fetch("/api/gemini/radar/articles?limit=1000");
         if (!response.ok) return;
         const data = await response.json();
         const radarArticles = extractRadarArticles(data);
         if (!cancelled && radarArticles.length) {
-          setArticles((prev) => mergeArticlesAtTop(radarArticles, prev));
+          setArticles(radarArticles);
         }
       } catch (err) {
         console.warn("Could not load RadarAgent articles:", err);
@@ -512,7 +512,7 @@ export default function App() {
 
     const loadRadarArticles = async () => {
       try {
-        const response = await fetch("/api/gemini/radar/articles");
+        const response = await fetch("/api/gemini/radar/articles?limit=1000");
         if (!response.ok) {
           throw new Error("No se pudieron cargar los articulos del radar");
         }
@@ -520,7 +520,7 @@ export default function App() {
         const data = await response.json();
         const radarArticles = extractRadarArticles(data);
         if (!cancelled && radarArticles.length > 0) {
-          setArticles((prev) => mergeArticlesAtTop(radarArticles, prev));
+          setArticles(radarArticles);
         }
       } catch (err) {
         console.warn("Could not load radar articles from backend: local articles active.", err);
@@ -1033,7 +1033,7 @@ export default function App() {
         setRadarRunStatusText(`Crawler trabajando en segundo plano... ${attempt + 1}`);
       }
 
-      const articlesResponse = await fetch("/api/gemini/radar/articles?limit=60");
+      const articlesResponse = await fetch("/api/gemini/radar/articles?limit=1000");
       if (!articlesResponse.ok) {
         throw new Error("No se pudieron cargar los articulos del radar");
       }
@@ -1041,7 +1041,7 @@ export default function App() {
       const data = await articlesResponse.json();
       const radarArticles = extractRadarArticles(data);
       if (radarArticles.length > 0) {
-        setArticles((prev) => mergeArticlesAtTop(radarArticles, prev));
+        setArticles(radarArticles);
         setActiveTab("home");
         setRadarRunStatusText(`Radar finalizado: ${radarArticles.length} articulos disponibles.`);
         showToast(`Radar finalizado: ${radarArticles.length} articulos disponibles en el inicio.`);
@@ -1071,7 +1071,7 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           background: true,
-          limit: 200
+          limit: 1000
         })
       });
 
@@ -1090,7 +1090,7 @@ export default function App() {
         setPromptRadarStatusText(`PromptRadar trabajando en segundo plano... ${attempt + 1}`);
       }
 
-      const promptsResponse = await fetch("/api/gemini/prompts?limit=160");
+      const promptsResponse = await fetch("/api/gemini/prompts?limit=1000");
       if (!promptsResponse.ok) {
         throw new Error("No se pudieron cargar los prompts importados");
       }
@@ -1101,7 +1101,7 @@ export default function App() {
         : [];
 
       if (importedPrompts.length > 0) {
-        setPrompts((prev) => mergePromptsAtTop(importedPrompts, prev));
+        setPrompts(importedPrompts);
         setActiveTab("prompts");
         setPromptRadarStatusText(`PromptRadar finalizado: ${importedPrompts.length} prompts disponibles.`);
         showToast(`PromptRadar importo ${importedPrompts.length} prompts con metadata en español.`);
