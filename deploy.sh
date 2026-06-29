@@ -2,29 +2,36 @@
 set -e
 
 # ============================================================
-# WENTIX AI COMMUNITY - FAST DEPLOY SCRIPT
+# WENTIX AI COMMUNITY - VPS BUILD/RELOAD SCRIPT
 # ============================================================
-# Run this ON THE VPS (or via SSH) every time you push updates
+# Current production path: /var/www/wentix-ai
+# Current public URL: https://community.wentixai.pro
+#
+# Note: the current VPS app directory may not be a Git repository.
+# In that case, sync files first (tar/scp), then run this script.
 # ============================================================
 
 APP_DIR="/var/www/wentix-ai"
 
-echo "🚀 Deploying Wentix AI Community..."
+echo "Deploying Wentix AI Community..."
+cd "$APP_DIR"
 
-cd $APP_DIR
+if [ -d ".git" ]; then
+  echo "Pulling latest changes from Git..."
+  git pull origin main
+else
+  echo "No .git directory found. Skipping git pull; using files already synced to $APP_DIR."
+fi
 
-echo "📥 Pulling latest changes..."
-git pull origin main
-
-echo "📦 Installing dependencies..."
+echo "Installing dependencies..."
 npm install
 
-echo "🔨 Building..."
+echo "Building..."
 npm run build
 
-echo "🔄 Reloading PM2..."
-pm2 reload ecosystem.config.js
+echo "Reloading PM2..."
+pm2 reload wentix-ai-community --update-env
 
-echo "✅ Deployed!"
-echo "🔗 https://wentixai.sbs"
-echo "📝 Logs: pm2 logs wentix-ai-community"
+echo "Deployed."
+echo "URL: https://community.wentixai.pro"
+echo "Logs: pm2 logs wentix-ai-community"

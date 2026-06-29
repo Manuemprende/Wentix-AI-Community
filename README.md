@@ -1,131 +1,129 @@
 # Wentix AI Community
 
-AI-powered community platform for learning, building, and connecting.
+Plataforma Wentix AI para comunidad, academia, radar de IA, prompts y recursos modelados.
 
----
+## Produccion
 
-## 🏗️ Architecture
+- URL publica activa: https://community.wentixai.pro
+- VPS: `161.97.160.76`
+- App directory: `/var/www/wentix-ai`
+- Process manager: PM2
+- PM2 app: `wentix-ai-community`
+- Runtime port: `3002`
+- Public proxy: Traefik Docker (`wentix-traefik`)
+- Traefik route: `community.wentixai.pro -> 172.18.0.1:3002`
 
-- **Frontend:** React 19 + Vite + Tailwind CSS
-- **Backend:** Express + Vite SSR
-- **AI:** Ollama (local LLM) — runs on the same VPS
-- **Database:** JSON file (`leads_database.json`)
-- **Process Manager:** PM2
-- **Reverse Proxy:** Nginx + SSL (Let's Encrypt)
+Nota: `wentixai.sbs` no es la URL activa de esta app. Ese dominio todavia tiene DNS/hosting externo mezclado. Usar `community.wentixai.pro` para validar produccion.
 
----
+## Radar y Academia
 
-## 🚀 VPS Deploy (One-time Setup)
+El sistema tiene dos flujos:
 
-SSH into your VPS and run:
+- `RadarAgent`: extrae articulos y recursos desde fuentes publicas, usa sitemap cuando existe, modela el contenido y lo guarda en `radar_articles.json`.
+- `PromptRadar`: extrae prompts desde fuentes publicas, usa sitemap cuando existe, conserva el prompt en ingles y modela titulo/descripcion/categoria en espanol en `radar_prompts.json`.
+
+Estado actual esperado:
+
+- Articulos modelados: `390`
+- Prompts modelados: `797`
+- El inicio muestra solo 3 piezas importantes.
+- `AI 0 a PRO` recibe la biblioteca completa de articulos modelados.
+- La biblioteca de prompts carga hasta `1000` items desde backend.
+
+## Variables Importantes
+
+Configurar en `.env` local y en `/var/www/wentix-ai/.env` del VPS:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Manuemprende/Wentix-AI-Community/main/setup-vps.sh | bash
+NODE_ENV=production
+PORT=3002
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
+APP_URL=https://community.wentixai.pro
+
+RADAR_AUTO_RUN=true
+RADAR_INTERVAL_MINUTES=60
+RADAR_CRAWL_ENABLED=true
+RADAR_MAX_PAGES=800
+
+PROMPT_RADAR_AUTO_RUN=true
+PROMPT_RADAR_INTERVAL_MINUTES=120
+PROMPT_RADAR_LIMIT=800
 ```
 
-Or manually:
+## Desarrollo Local
 
 ```bash
-# 1. Update & install dependencies
-sudo apt update && sudo apt install -y curl wget git nginx certbot python3-certbot-nginx
-
-# 2. Node.js 22
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# 3. PM2
-sudo npm install -g pm2
-
-# 4. Ollama (local LLM)
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3.2
-
-# 5. Clone & build
-git clone https://github.com/Manuemprende/Wentix-AI-Community.git /var/www/wentix-ai
-cd /var/www/wentix-ai
-npm install && npm run build
-
-# 6. Create .env
-cp .env.example .env
-# Edit: OLLAMA_MODEL=llama3.2, APP_URL=https://wentixai.sbs
-
-# 7. Start with PM2
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
-
-# 8. Nginx + SSL
-sudo cp nginx.conf /etc/nginx/sites-available/wentix-ai
-sudo ln -s /etc/nginx/sites-available/wentix-ai /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d wentixai.sbs
-```
-
----
-
-## 🔄 Fast Update (After Git Push)
-
-Every time you push updates to GitHub, run this **on the VPS**:
-
-```bash
-cd /var/www/wentix-ai && ./deploy.sh
-```
-
-Or manually:
-
-```bash
-cd /var/www/wentix-ai
-git pull origin main
-npm install
-npm run build
-pm2 reload ecosystem.config.js
-```
-
----
-
-## 🐳 Docker Deploy (Alternative)
-
-```bash
-docker-compose up -d --build
-```
-
----
-
-## 📦 Run Locally
-
-**Prerequisites:** Node.js 22+, Ollama running locally
-
-```bash
-# Start Ollama first
-ollama serve
-
-# In another terminal
 npm install
 npm run dev
 ```
 
----
+URL local habitual:
 
-## 🔧 Environment Variables
+```text
+http://localhost:3002
+```
 
-| Variable | Description | Default |
-|---|---|---|
-| `OLLAMA_BASE_URL` | Ollama API endpoint | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Model name to use | `llama3.2` |
-| `APP_URL` | Public URL of the app | `https://wentixai.sbs` |
-| `PORT` | Server port | `3000` |
+Validaciones antes de desplegar:
 
----
+```bash
+npm run lint
+npm run build
+```
 
-## 📝 Useful Commands
+## Deploy Real al VPS
 
-| Command | Description |
-|---|---|
-| `pm2 status` | Check app status |
-| `pm2 logs wentix-ai-community` | View logs |
-| `pm2 reload ecosystem.config.js` | Reload app |
-| `ollama list` | List installed models |
-| `ollama pull llama3.2` | Update model |
-| `sudo nginx -t` | Test nginx config |
-| `sudo certbot renew --dry-run` | Test SSL renewal |
+El directorio remoto `/var/www/wentix-ai` actualmente no es un repo Git. Por eso el deploy se hace enviando un tar del commit actual y reconstruyendo en el VPS.
 
+Desde Windows/PowerShell, en la raiz del repo:
+
+```powershell
+git archive --format=tar --output wentix-deploy.tar HEAD
+scp wentix-deploy.tar root@161.97.160.76:/tmp/wentix-deploy.tar
+ssh root@161.97.160.76 'set -e; cd /var/www/wentix-ai; tar -xf /tmp/wentix-deploy.tar -C /var/www/wentix-ai; npm install; npm run build; pm2 reload wentix-ai-community --update-env; rm -f /tmp/wentix-deploy.tar; pm2 status --no-color'
+Remove-Item wentix-deploy.tar -Force
+```
+
+Despues del deploy validar:
+
+```bash
+curl -sS https://community.wentixai.pro/api/gemini/radar/articles?limit=1000
+curl -sS https://community.wentixai.pro/api/gemini/prompts?limit=1000
+pm2 status
+pm2 logs wentix-ai-community --lines 80
+```
+
+## Endpoints Utiles
+
+```text
+GET  /api/gemini/radar/articles?limit=1000
+GET  /api/gemini/radar/status
+POST /api/gemini/radar/run
+
+GET  /api/gemini/prompts?limit=1000
+GET  /api/gemini/prompts/status
+POST /api/gemini/prompts/run
+```
+
+Ejecutar radar manual:
+
+```bash
+curl -X POST https://community.wentixai.pro/api/gemini/radar/run \
+  -H "Content-Type: application/json" \
+  -d '{"background":true,"crawl":true,"limit":800}'
+```
+
+Ejecutar prompts manual:
+
+```bash
+curl -X POST https://community.wentixai.pro/api/gemini/prompts/run \
+  -H "Content-Type: application/json" \
+  -d '{"background":true,"limit":800}'
+```
+
+## Politica de Publicacion
+
+- Contenido propio nuevo: se sube y despliega de inmediato.
+- Contenido scrapeado/modelado del dia: se acumula y se despliega al cierre del dia, salvo que se pida publicarlo antes.
+- Home/Radar inicial: solo 3 piezas importantes.
+- Academia y biblioteca interna: pueden cargar todo el volumen modelado.
