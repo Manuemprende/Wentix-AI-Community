@@ -242,6 +242,8 @@ export default function App() {
     return merged;
   };
 
+  const homeRadarArticles = articles.slice(0, 3);
+
   // User Bookmark storage
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
     const saved = localStorage.getItem("wentix_bookmarks");
@@ -2894,14 +2896,14 @@ export default function App() {
           <section className="px-4 sm:px-6 lg:px-8 py-16 max-w-7xl mx-auto border-t border-white/5" id="blog-recursos">
         <div className="mb-10 text-center max-w-3xl mx-auto">
           <div className="text-xs font-bold text-purple-400 font-mono uppercase tracking-widest mb-1.5">RADAR WENTIX</div>
-          <h2 className="text-3xl font-bold font-display text-white tracking-tight">Noticias, Hacks & Tutoriales IA</h2>
+          <h2 className="text-3xl font-bold font-display text-white tracking-tight">Selección IA del Día</h2>
           <p className="text-xs text-neutral-400 mt-2">
-            Tendencias modeladas desde fuentes públicas y convertidas en acciones para creators, ecommerce y emprendedores digitales.
+            Solo 3 piezas importantes en portada. El resto queda modelado dentro de la academia y el radar interno.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {articles.map((art) => (
+          {homeRadarArticles.map((art) => (
             <article 
               key={art.id} 
               className="rounded-2xl glass-panel border border-white/5 hover:border-white/12 p-6 flex flex-col justify-between transition-all duration-300 group"

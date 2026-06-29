@@ -736,11 +736,69 @@ function isCrawlableInternalUrl(url: string, rootUrl: string): boolean {
   }
 }
 
+async function discoverSitemapUrls(seedUrls: string[], maxPages: number): Promise<string[]> {
+  const discovered = new Set<string>();
+
+  for (const seedUrl of seedUrls) {
+    if (discovered.size >= maxPages) break;
+
+    try {
+      const normalizedSeed = normalizeInputUrl(seedUrl).replace(/\/$/, "");
+      const origin = new URL(normalizedSeed).origin;
+      const sitemapCandidates = new Set<string>([`${origin}/sitemap.xml`]);
+
+      try {
+        const robotsResponse = await fetchWithTimeout(`${origin}/robots.txt`, {
+          headers: { "User-Agent": "WentixRadarCrawler/1.0" }
+        }, 9000);
+        if (robotsResponse.ok) {
+          const robotsText = await robotsResponse.text();
+          const sitemapPattern = /^sitemap:\s*(\S+)/gim;
+          let robotsMatch: RegExpExecArray | null;
+          while ((robotsMatch = sitemapPattern.exec(robotsText))) {
+            sitemapCandidates.add(robotsMatch[1].trim());
+          }
+        }
+      } catch {
+        // Sitemap discovery still continues with /sitemap.xml.
+      }
+
+      for (const sitemapUrl of sitemapCandidates) {
+        if (discovered.size >= maxPages) break;
+        try {
+          const response = await fetchWithTimeout(sitemapUrl, {
+            headers: {
+              "User-Agent": "WentixRadarCrawler/1.0",
+              "Accept": "application/xml,text/xml,text/plain,*/*"
+            }
+          }, 12000);
+          if (!response.ok) continue;
+          const xml = await response.text();
+          const locPattern = /<loc>\s*([^<]+)\s*<\/loc>/gi;
+          let locMatch: RegExpExecArray | null;
+          while ((locMatch = locPattern.exec(xml)) && discovered.size < maxPages) {
+            const nextUrl = normalizeDiscoveredUrl(decodeHtmlEntities(locMatch[1].trim()), normalizedSeed);
+            if (!nextUrl || discovered.has(nextUrl) || !isCrawlableInternalUrl(nextUrl, normalizedSeed)) continue;
+            discovered.add(nextUrl);
+          }
+        } catch (err: any) {
+          console.warn(`Radar sitemap skipped ${sitemapUrl}:`, err.message || err);
+        }
+      }
+    } catch {
+      // Ignore malformed seed URLs.
+    }
+  }
+
+  return Array.from(discovered).slice(0, maxPages);
+}
+
 async function discoverInternalUrls(seedUrls: string[], maxPages: number): Promise<string[]> {
   const normalizedSeeds = seedUrls.map((url) => normalizeInputUrl(url).replace(/\/$/, ""));
   const rootUrl = normalizedSeeds[0];
-  const queue = [...normalizedSeeds];
-  const discovered = new Set<string>(normalizedSeeds);
+  const sitemapUrls = await discoverSitemapUrls(normalizedSeeds, maxPages);
+  const queue = [...normalizedSeeds, ...sitemapUrls];
+  const discovered = new Set<string>(queue);
   const crawled = new Set<string>();
 
   while (queue.length && discovered.size < maxPages) {
@@ -1506,7 +1564,7 @@ Responde UNICAMENTE este JSON:
 
     try {
       const sourceUrls = getRadarSourceUrls(options.urls);
-      const maxPages = Math.min(Math.max(Number(options.limit) || intEnv("RADAR_MAX_PAGES", 120), 1), 500);
+      const maxPages = Math.min(Math.max(Number(options.limit) || intEnv("RADAR_MAX_PAGES", 120), 1), 1200);
       const crawlEnabled = options.crawl ?? boolEnv("RADAR_CRAWL_ENABLED", true);
       const expandedUrls = crawlEnabled ? await discoverInternalUrls(sourceUrls, maxPages) : sourceUrls;
       const cappedUrls = expandedUrls.slice(0, maxPages);
@@ -1676,8 +1734,12 @@ Responde UNICAMENTE JSON:
 
     try {
       const requestedSources = options.urls || options.url;
-      const sourceUrls = getPromptRadarSourceUrls(requestedSources).map((sourceUrl) => normalizeInputUrl(sourceUrl));
-      const limit = Math.min(Math.max(Number(options.limit) || intEnv("PROMPT_RADAR_LIMIT", 200), 1), 400);
+      const limit = Math.min(Math.max(Number(options.limit) || intEnv("PROMPT_RADAR_LIMIT", 200), 1), 1000);
+      const configuredSourceUrls = getPromptRadarSourceUrls(requestedSources).map((sourceUrl) => normalizeInputUrl(sourceUrl));
+      const sourceUrlSet = new Set<string>(configuredSourceUrls);
+      const sitemapPromptUrls = await discoverSitemapUrls(configuredSourceUrls, limit);
+      sitemapPromptUrls.forEach((sourceUrl) => sourceUrlSet.add(sourceUrl));
+      const sourceUrls = Array.from(sourceUrlSet).slice(0, limit);
       const discoveredCards: ExtractedPromptCard[] = [];
       const discoveredKeys = new Set<string>();
 
@@ -1894,7 +1956,7 @@ Responde UNICAMENTE JSON:
   });
 
   app.get("/api/gemini/radar/articles", (req, res) => {
-    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 300);
+      const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 1000);
     const articles = readRadarArticles()
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
@@ -1957,7 +2019,7 @@ Responde UNICAMENTE JSON:
   });
 
   app.get("/api/gemini/prompts", (req, res) => {
-    const limit = Math.min(Math.max(Number(req.query.limit) || 80, 1), 500);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 80, 1), 1000);
     const prompts = readRadarPrompts()
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
