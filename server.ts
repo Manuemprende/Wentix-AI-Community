@@ -530,7 +530,9 @@ function sanitizeModeledText(value: string): string {
     .replace(/Descripcion detectada:\s*/gi, "")
     .replace(/Dominio:\s*\S+\s*/gi, "")
     .replace(/Contenido visible:\s*/gi, "")
+    .replace(/\b(?:Titulo detectado|Descripcion detectada|Dominio|Contenido visible)\b[:：]?/gi, "")
     .replace(/\b(?:0[1-9]|1[0-9])\s+([A-ZÁÉÍÓÚÑ][^.!?]{2,42})(?=\s+(?:0[1-9]|1[0-9])\s+|$)/g, " ")
+    .replace(/\b(?:0[1-9]|1[0-9])\s+(?=[A-ZÁÉÍÓÚÑ])/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -1191,6 +1193,103 @@ function buildFallbackNewsArticle(resource: ExtractedResource): ModeledNewsArtic
   }, resource);
 }
 
+function hasArticleScrapeNoise(article: ModeledNewsArticle): boolean {
+  const blob = [
+    article.title,
+    article.excerpt,
+    article.sourceSummary,
+    article.wentixAngle,
+    ...article.learningGoals,
+    ...article.actionSteps,
+    ...article.contentSections.flatMap((section) => [section.heading, section.body])
+  ].join(" ");
+
+  return /Titulo detectado|Descripcion detectada|Dominio:\s|Contenido visible|\b0[1-9]\s+[A-ZÁÉÍÓÚÑ][^.!?]{2,42}\s+0[1-9]/i.test(blob);
+}
+
+function cleanNewsArticleText(value: string, fallback = ""): string {
+  const cleaned = sanitizeModeledText(decodeHtmlEntities(String(value || fallback || "")))
+    .replace(/\b(Home AI Tools Newsletter Resources|Login Join For Free|select a listing type below|contact sales to learn more)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned || fallback;
+}
+
+function buildEditorialRecoveryArticle(article: ModeledNewsArticle, resource: ExtractedResource): ModeledNewsArticle {
+  const title = cleanNewsArticleText(article.title || resource.title, "Recurso IA modelado para Wentix").replace(/^Radar Wentix:\s*/i, "");
+  const summary = cleanNewsArticleText(
+    article.excerpt || article.sourceSummary || resource.description,
+    `Recurso curado para convertir "${title}" en una clase aplicable dentro de Wentix.`
+  );
+  const sourceHost = (() => {
+    try {
+      return new URL(resource.normalizedUrl).hostname.replace(/^www\./, "");
+    } catch {
+      return "la fuente analizada";
+    }
+  })();
+
+  return {
+    ...article,
+    title: title.slice(0, 95),
+    excerpt: summary.slice(0, 260),
+    sourceSummary: `La fuente ${sourceHost} entrega una señal útil sobre ${title}. Wentix la transforma en aprendizaje práctico, no en copia literal.`.slice(0, 320),
+    wentixAngle: `La oportunidad es convertir ${title} en una sesión accionable para crear, automatizar o decidir mejor con IA dentro del ecosistema Wentix.`,
+    learningGoals: [
+      `Entender la oportunidad principal detrás de ${title}.`,
+      "Separar la señal útil del ruido de la fuente original.",
+      "Convertir el aprendizaje en una acción aplicable para un proyecto real."
+    ],
+    contentSections: [
+      {
+        heading: "Contexto estratégico",
+        body: `${summary} El valor para Wentix está en traducir esta señal a una decisión concreta: qué probar, qué automatizar y qué evitar antes de invertir tiempo o dinero.`
+      },
+      {
+        heading: "Aplicación práctica",
+        body: `Usa este recurso como punto de partida para una mini sesión: define el objetivo, el tipo de usuario beneficiado y el resultado esperado. Luego conviértelo en prompt, checklist, workflow o demo simple para validar si aporta valor real.`
+      },
+      {
+        heading: "Checklist Wentix",
+        body: `Antes de implementarlo, confirma tres cosas: que resuelve un problema repetible, que se puede explicar en pasos simples y que deja una salida reutilizable para la comunidad. Si no cumple eso, queda como referencia y no como clase prioritaria.`
+      }
+    ],
+    actionSteps: [
+      "Resume la oportunidad en una frase operativa.",
+      "Define un caso de uso para creator, builder, ecommerce o negocio local.",
+      "Guarda el resultado como sesión, prompt o automatización reutilizable."
+    ],
+    closingNote: "El objetivo es que el alumno salga con una acción clara, no con texto pegado desde otra fuente."
+  };
+}
+
+function hardenNewsArticleForPublish(article: ModeledNewsArticle, resource: ExtractedResource): ModeledNewsArticle {
+  const cleaned: ModeledNewsArticle = {
+    ...article,
+    title: cleanNewsArticleText(article.title, resource.title).slice(0, 95),
+    excerpt: cleanNewsArticleText(article.excerpt, resource.description).slice(0, 260),
+    sourceSummary: cleanNewsArticleText(article.sourceSummary, resource.description || resource.text.slice(0, 260)).slice(0, 320),
+    wentixAngle: cleanNewsArticleText(article.wentixAngle, "Convertir esta señal en una acción concreta para la comunidad Wentix."),
+    learningGoals: article.learningGoals.map((goal) => cleanNewsArticleText(goal)).filter(Boolean).slice(0, 5),
+    contentSections: article.contentSections
+      .map((section, index) => ({
+        heading: cleanNewsArticleText(section.heading, `Bloque ${index + 1}`).slice(0, 90),
+        body: cleanNewsArticleText(section.body).slice(0, 1200)
+      }))
+      .filter((section) => section.body.length > 80)
+      .slice(0, 8),
+    actionSteps: article.actionSteps.map((step) => cleanNewsArticleText(step)).filter(Boolean).slice(0, 6),
+    closingNote: cleanNewsArticleText(article.closingNote, "Convierte la fuente en una acción clara dentro de Wentix.")
+  };
+
+  if (cleaned.contentSections.length < 3 || cleaned.learningGoals.length < 3 || hasArticleScrapeNoise(cleaned)) {
+    return buildEditorialRecoveryArticle(cleaned, resource);
+  }
+
+  return cleaned;
+}
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT || 3002);
@@ -1732,7 +1831,7 @@ Responde UNICAMENTE este JSON:
 
     if (!aiUp) {
       return {
-        article: buildFallbackNewsArticle(resource),
+        article: hardenNewsArticleForPublish(buildFallbackNewsArticle(resource), resource),
         source: "Extractor + Modelado Fallback"
       };
     }
@@ -1741,13 +1840,13 @@ Responde UNICAMENTE este JSON:
     try {
       const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
       return {
-        article: normalizeNewsArticle(JSON.parse(cleanedText), resource),
+        article: hardenNewsArticleForPublish(normalizeNewsArticle(JSON.parse(cleanedText), resource), resource),
         source: "Extractor + AI News Model"
       };
     } catch (parseError) {
       console.warn("No se pudo parsear noticia modelada por AI provider; usando fallback. Raw:", responseText);
       return {
-        article: buildFallbackNewsArticle(resource),
+        article: hardenNewsArticleForPublish(buildFallbackNewsArticle(resource), resource),
         source: "Extractor + Modelado Fallback"
       };
     }
