@@ -15,6 +15,12 @@ const DEFAULT_RADAR_SOURCE_URLS = [
   "https://www.tododeia.com/tienda/codex-de-cero-a-cien",
   "https://www.tododeia.com/collab"
 ];
+const DEFAULT_RADAR_TOOL_SOURCE_URLS = [
+  "https://www.futurepedia.io/",
+  "https://theresanaiforthat.com/",
+  "https://aitoptools.com/",
+  "https://bestofai.io/"
+];
 const DEFAULT_PROMPT_SOURCE_URLS = [
   "https://prompts.chat/prompts",
   "https://prompts.chat/prompts?q=automation",
@@ -275,12 +281,29 @@ function parseSourceUrls(input?: string): string[] {
     .filter(Boolean);
 }
 
+function uniqueSourceUrls(urls: string[]): string[] {
+  const seen = new Set<string>();
+  return urls.filter((url) => {
+    const key = normalizeDedupeText(url);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function getRadarSourceUrls(overrideUrls?: unknown): string[] {
   const requestedUrls = Array.isArray(overrideUrls)
     ? overrideUrls.map((item) => String(item).trim()).filter(Boolean)
     : parseSourceUrls(typeof overrideUrls === "string" ? overrideUrls : undefined);
   const configuredUrls = parseSourceUrls(process.env.RADAR_SOURCE_URLS);
-  return requestedUrls.length ? requestedUrls : configuredUrls.length ? configuredUrls : DEFAULT_RADAR_SOURCE_URLS;
+  const configuredToolUrls = parseSourceUrls(process.env.RADAR_TOOL_SOURCE_URLS);
+
+  if (requestedUrls.length) return uniqueSourceUrls(requestedUrls);
+
+  return uniqueSourceUrls([
+    ...(configuredUrls.length ? configuredUrls : DEFAULT_RADAR_SOURCE_URLS),
+    ...(configuredToolUrls.length ? configuredToolUrls : DEFAULT_RADAR_TOOL_SOURCE_URLS)
+  ]);
 }
 
 function getPromptRadarSourceUrls(overrideUrls?: unknown): string[] {

@@ -19,13 +19,13 @@ Nota: `wentixai.sbs` no es la URL activa de esta app. Ese dominio todavia tiene 
 
 El sistema tiene dos flujos:
 
-- `RadarAgent`: extrae articulos y recursos desde fuentes publicas, usa sitemap cuando existe, modela el contenido y lo guarda en `radar_articles.json`.
+- `RadarAgent`: extrae articulos, recursos y herramientas desde fuentes publicas, usa sitemap cuando existe, modela el contenido y lo guarda en `radar_articles.json`.
 - `PromptRadar`: extrae prompts desde fuentes publicas, usa sitemap cuando existe, conserva el prompt en ingles y modela titulo/descripcion/categoria en espanol en `radar_prompts.json`.
 
 Estado actual esperado:
 
 - Articulos modelados: `390`
-- Prompts modelados: `797`
+- Prompts modelados: `799`
 - El inicio muestra solo 3 piezas importantes.
 - `AI 0 a PRO` recibe la biblioteca completa de articulos modelados.
 - La biblioteca de prompts carga hasta `1000` items desde backend.
@@ -45,6 +45,8 @@ RADAR_AUTO_RUN=true
 RADAR_INTERVAL_MINUTES=60
 RADAR_CRAWL_ENABLED=true
 RADAR_MAX_PAGES=800
+RADAR_SOURCE_URLS=https://www.tododeia.com/,https://www.tododeia.com/tienda/claude-de-cero-a-cien,https://www.tododeia.com/tienda/codex-de-cero-a-cien,https://www.tododeia.com/collab
+RADAR_TOOL_SOURCE_URLS=https://www.futurepedia.io/,https://theresanaiforthat.com/,https://aitoptools.com/,https://bestofai.io/
 
 PROMPT_RADAR_AUTO_RUN=true
 PROMPT_RADAR_INTERVAL_MINUTES=120
@@ -112,6 +114,16 @@ curl -X POST https://community.wentixai.pro/api/gemini/radar/run \
   -H "Content-Type: application/json" \
   -d '{"background":true,"crawl":true,"limit":800}'
 ```
+
+Agregar nuevas fuentes de herramientas:
+
+```bash
+# Separar por comas o saltos de linea.
+# El agente mezcla estas fuentes con RADAR_SOURCE_URLS y deduplica por URL.
+RADAR_TOOL_SOURCE_URLS=https://directorio-uno.com/,https://directorio-dos.com/
+```
+
+Usar este campo para directorios, lanzamientos de productos, paginas de herramientas IA o repositorios publicos. El agente no copia la fuente: extrae, modela, clasifica por nivel y la convierte en contenido interno Wentix.
 
 Ejecutar prompts manual:
 
