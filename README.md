@@ -77,6 +77,8 @@ npm run build
 
 El directorio remoto `/var/www/wentix-ai` actualmente no es un repo Git. Por eso el deploy se hace enviando un tar del commit actual y reconstruyendo en el VPS.
 
+Los archivos persistidos de produccion (`radar_articles.json`, `radar_prompts.json`, `leads_database.json`) no se incluyen en el tar porque viven en el VPS y crecen con los agentes.
+
 Desde Windows/PowerShell, en la raiz del repo:
 
 ```powershell
