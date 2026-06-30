@@ -212,7 +212,8 @@ export default function App() {
       learningGoals: Array.isArray((raw as any).learningGoals) ? (raw as any).learningGoals : undefined,
       contentSections: Array.isArray((raw as any).contentSections) ? (raw as any).contentSections : undefined,
       actionSteps: Array.isArray((raw as any).actionSteps) ? (raw as any).actionSteps : undefined,
-      closingNote: typeof (raw as any).closingNote === "string" ? (raw as any).closingNote : undefined
+      closingNote: typeof (raw as any).closingNote === "string" ? (raw as any).closingNote : undefined,
+      resourceLinks: Array.isArray((raw as any).resourceLinks) ? (raw as any).resourceLinks : undefined
     };
   };
 

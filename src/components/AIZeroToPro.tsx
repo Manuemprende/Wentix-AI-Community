@@ -29,7 +29,9 @@ import {
   FileCode,
   ShieldAlert,
   Play,
-  MessageSquare
+  MessageSquare,
+  ExternalLink,
+  Github
 } from "lucide-react";
 import { PromptItem, ResourceArticle } from "../types";
 import { SKILLS_CATEGORIES, SKILLS_PACKS, PLAN_DAYS, SKILLS_FAQS } from "../skills_data";
@@ -58,6 +60,7 @@ interface GuideMetadata {
   contentSections?: { heading: string; body: string }[];
   actionSteps?: string[];
   closingNote?: string;
+  resourceLinks?: ResourceArticle["resourceLinks"];
 }
 
 export default function AIZeroToPro({ 
@@ -90,6 +93,25 @@ export default function AIZeroToPro({
   const [activeStackTab, setActiveStackTab] = useState<"overview" | "compose" | "calculator" | "guide">("overview");
   const [calcSeats, setCalcSeats] = useState(5);
   const [calcZapierTasks, setCalcZapierTasks] = useState(5000);
+
+  const cleanImportedText = (value = "") => {
+    const withoutMeta = value
+      .replace(/Titulo detectado:\s*/gi, "")
+      .replace(/Descripcion detectada:\s*/gi, "")
+      .replace(/Dominio:\s*\S+\s*/gi, "")
+      .replace(/Contenido visible:\s*/gi, "")
+      .replace(/\b(?:0[1-9]|1[0-9])\s+([A-ZÁÉÍÓÚÑ][^.!?]{2,42})(?=\s+(?:0[1-9]|1[0-9])\s+|$)/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const firstUsefulMarker = withoutMeta.search(/\b(Imagina esto|La idea|El problema|La diferencia|Funciona|Para aplicarlo|Esto importa|Aquí|Con esto)\b/i);
+    return firstUsefulMarker > 80 ? withoutMeta.slice(firstUsefulMarker).trim() : withoutMeta;
+  };
+
+  const getResourceLinks = (guide?: GuideMetadata | null) => {
+    const links = guide?.resourceLinks || [];
+    return links.filter((link) => link?.url && !link.url.includes("tododeia.com")).slice(0, 3);
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -1187,9 +1209,9 @@ Empezá con la primera pregunta.`
 
   const radarGuides: GuideMetadata[] = articles.map((article, index) => ({
     id: `radar-session-${article.id}`,
-    title: article.title.replace(/^Radar Wentix:\s*/i, ""),
+    title: cleanImportedText(article.title.replace(/^Radar Wentix:\s*/i, "")),
     subtitle: article.category || "Sesión modelada desde TodoDeIA",
-    lead: article.excerpt,
+    lead: cleanImportedText(article.excerpt),
     level: article.difficulty === "Avanzado" ? "avanzado" : article.difficulty === "Intermedio" ? "intermedio" : "principiante",
     duration: article.readTime || "4 min",
     lessonNum: `R${String(index + 1).padStart(2, "0")}`,
@@ -1197,14 +1219,19 @@ Empezá con la primera pregunta.`
     tags: article.tags?.slice(0, 3) || ["IA", "Radar"],
     sourceUrl: article.sourceUrl,
     imported: true,
-    learningGoals: article.learningGoals,
-    contentSections: article.contentSections,
-    actionSteps: article.actionSteps,
-    closingNote: article.closingNote
+    learningGoals: article.learningGoals?.map(cleanImportedText).filter(Boolean),
+    contentSections: article.contentSections?.map((section) => ({
+      heading: cleanImportedText(section.heading),
+      body: cleanImportedText(section.body)
+    })).filter((section) => section.body.length > 80),
+    actionSteps: article.actionSteps?.map(cleanImportedText).filter(Boolean),
+    closingNote: article.closingNote ? cleanImportedText(article.closingNote) : undefined,
+    resourceLinks: article.resourceLinks
   }));
   const academyGuides = [...radarGuides, ...METADATA];
   const activeGuide = academyGuides.find((guide) => guide.id === selectedGuideId);
   const activeRadarGuide = activeGuide?.imported ? activeGuide : null;
+  const activeResourceLinks = getResourceLinks(activeRadarGuide);
 
   return (
     <div className="w-full bg-neutral-950/40 rounded-3xl border border-white/5 overflow-hidden shadow-2xl backdrop-blur-md" id="wentix-ai-0-to-pro-academy">
@@ -1621,10 +1648,29 @@ Empezá con la primera pregunta.`
                   </div>
 
                   <div className="rounded-3xl bg-neutral-950/50 border border-white/5 p-5 md:p-6 space-y-4">
-                    <h3 className="text-sm font-bold text-amber-400 uppercase tracking-widest font-mono">Modelo Wentix</h3>
+                    <h3 className="text-sm font-bold text-amber-400 uppercase tracking-widest font-mono">Recurso aplicable</h3>
                     <p className="text-sm text-neutral-300 leading-relaxed">
-                      Esta clase usa la fuente pública como insumo, pero queda reestructurada como una pieza interna: contexto, desarrollo, decisión práctica y aplicación para la ruta de academia.
+                      Si detectamos una skill, repositorio, documentación o web oficial, aparece aquí como recurso útil. La página scrapeada queda solo como insumo interno de investigación.
                     </p>
+                    {activeResourceLinks.length > 0 && (
+                      <div className="space-y-2">
+                        {activeResourceLinks.map((link) => (
+                          <a
+                            key={link.url}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-100 hover:border-amber-400/50 hover:bg-amber-500/15 transition"
+                          >
+                            <span className="flex items-center gap-2 min-w-0">
+                              {link.type === "github" ? <Github className="w-4 h-4 shrink-0" /> : <ExternalLink className="w-4 h-4 shrink-0" />}
+                              <span className="truncate">{link.label || "Abrir recurso"}</span>
+                            </span>
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       {activeRadarGuide.tags.map((tag) => (
                         <span key={tag} className="text-[10px] font-mono px-2 py-1 rounded bg-neutral-900 border border-white/5 text-neutral-400">
@@ -1642,9 +1688,9 @@ Empezá con la primera pregunta.`
                   ]).map((section, index) => (
                     <article key={`${section.heading}-${index}`} className="rounded-3xl bg-neutral-950/60 border border-white/5 p-5 md:p-7 space-y-3">
                       <div className="flex items-center gap-2 text-cyan-400 font-mono text-xs uppercase tracking-widest font-bold">
-                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <span>Desarrollo guiado</span>
                         <span className="h-px bg-cyan-500/30 w-10" />
-                        <span>Bloque de clase</span>
+                        <span>{activeRadarGuide.level}</span>
                       </div>
                       <h2 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase font-display">
                         {section.heading}

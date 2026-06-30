@@ -71,6 +71,11 @@ export interface ResourceArticle {
   contentSections?: { heading: string; body: string }[];
   actionSteps?: string[];
   closingNote?: string;
+  resourceLinks?: {
+    label: string;
+    url: string;
+    type: "github" | "official" | "docs" | "demo" | "tool" | string;
+  }[];
 }
 
 export interface StackItem {

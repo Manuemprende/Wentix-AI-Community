@@ -57,6 +57,13 @@ interface ExtractedResource {
   license?: string;
   homepage?: string;
   topics?: string[];
+  resourceLinks?: ResourceLink[];
+}
+
+interface ResourceLink {
+  label: string;
+  url: string;
+  type: "github" | "official" | "docs" | "demo" | "tool";
 }
 
 interface ModeledCatalogItem {
@@ -93,6 +100,7 @@ interface ModeledNewsArticle {
   contentSections?: { heading: string; body: string }[];
   actionSteps?: string[];
   closingNote?: string;
+  resourceLinks?: ResourceLink[];
 }
 
 function inferDifficulty(resource: ExtractedResource, item?: Partial<ModeledNewsArticle>): "Principiante" | "Intermedio" | "Avanzado" {
@@ -466,8 +474,56 @@ function extractMarkdownDescription(markdown: string): string {
     .find((line) => line.length > 40 && !line.startsWith("```"))?.slice(0, 220) || "";
 }
 
+function sanitizeModeledText(value: string): string {
+  return String(value || "")
+    .replace(/Titulo detectado:\s*/gi, "")
+    .replace(/Descripcion detectada:\s*/gi, "")
+    .replace(/Dominio:\s*\S+\s*/gi, "")
+    .replace(/Contenido visible:\s*/gi, "")
+    .replace(/\b(?:0[1-9]|1[0-9])\s+([A-ZÁÉÍÓÚÑ][^.!?]{2,42})(?=\s+(?:0[1-9]|1[0-9])\s+|$)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractUsefulResourceLinks(html: string, baseUrl: string): ResourceLink[] {
+  const links: ResourceLink[] = [];
+  const seen = new Set<string>();
+  const baseHost = new URL(baseUrl).hostname.replace(/^www\./, "");
+  const anchorPattern = /<a\b[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = anchorPattern.exec(html)) && links.length < 6) {
+    const href = normalizeDiscoveredUrl(match[1], baseUrl);
+    if (!href || seen.has(href)) continue;
+
+    const parsed = new URL(href);
+    const host = parsed.hostname.replace(/^www\./, "");
+    const path = parsed.pathname.toLowerCase();
+    const labelText = decodeHtmlEntities(stripHtml(match[2])).replace(/\s+/g, " ").trim();
+    const compact = `${labelText} ${href}`.toLowerCase();
+
+    let type: ResourceLink["type"] | null = null;
+    if (host === "github.com") type = "github";
+    else if (/docs|documentation|manual|guide|learn/.test(compact)) type = "docs";
+    else if (/demo|playground|example|preview/.test(compact)) type = "demo";
+    else if (/launch|open app|try|sign up|get started|website|official|home/.test(compact) && host !== baseHost) type = "official";
+    else if (host !== baseHost && !/\.(png|jpe?g|gif|webp|svg|css|js|pdf|zip)$/i.test(path)) type = "tool";
+
+    if (!type) continue;
+    seen.add(href);
+    links.push({
+      label: labelText && labelText.length <= 60 ? labelText : type === "github" ? "Repositorio GitHub" : "Recurso oficial",
+      url: href,
+      type
+    });
+  }
+
+  const order: Record<ResourceLink["type"], number> = { github: 0, official: 1, docs: 2, demo: 3, tool: 4 };
+  return links.sort((a, b) => order[a.type] - order[b.type]);
+}
+
 function splitResourceIntoSections(resource: ExtractedResource): { heading: string; body: string }[] {
-  const cleaned = resource.text
+  const cleaned = sanitizeModeledText(resource.text)
     .replace(/\s+/g, " ")
     .replace(/Volver al inicio/gi, " ")
     .replace(/comunidad b[oó]veda/gi, " ")
@@ -904,7 +960,11 @@ async function extractGitHubResource(url: string, sourcePlatform?: string): Prom
     language: repo.language || "Open Source",
     license: repo.license?.spdx_id || repo.license?.name,
     homepage: repo.homepage || "",
-    topics
+    topics,
+    resourceLinks: [
+      { label: "Repositorio GitHub", url: normalizedUrl, type: "github" },
+      ...(repo.homepage ? [{ label: "Web oficial", url: repo.homepage, type: "official" as const }] : [])
+    ]
   };
 }
 
@@ -944,6 +1004,7 @@ async function extractWebResource(url: string, sourcePlatform?: string): Promise
     ? extractMarkdownDescription(body)
     : extractMeta(body, "description") || extractMeta(body, "og:description") || "";
   const text = (isMarkdown ? body : stripHtml(body)).slice(0, 24000);
+  const resourceLinks = isMarkdown ? [] : extractUsefulResourceLinks(body, normalizedUrl);
   const refinedTitle = repoRef ? repoRef.repo : refinePageTitle(normalizedUrl, title, text);
   const starMatch = text.match(/\bStar\s+([\d.,]+[km]?)/i) || text.match(/([\d.,]+[km]?)\s+stars/i);
   const forkMatch = text.match(/\bFork\s+([\d.,]+[km]?)/i) || text.match(/([\d.,]+[km]?)\s+forks/i);
@@ -965,7 +1026,8 @@ async function extractWebResource(url: string, sourcePlatform?: string): Promise
     repo: repoRef?.repo,
     stars: parseCompactNumber(starMatch?.[1]),
     forks: parseCompactNumber(forkMatch?.[1]),
-    language: repoRef ? "Open Source" : undefined
+    language: repoRef ? "Open Source" : undefined,
+    resourceLinks
   };
 }
 
@@ -1044,21 +1106,24 @@ function normalizeNewsArticle(item: Partial<ModeledNewsArticle>, resource: Extra
     tags: Array.isArray(item.tags) && item.tags.length ? item.tags.slice(0, 4).map(String) : ["IA", "Tendencias", "Wentix"],
     views: Number.isFinite(Number(item.views)) ? Number(item.views) : Math.floor(1400 + Math.random() * 5200),
     sourceUrl: String(item.sourceUrl || resource.normalizedUrl),
-    sourceSummary: String(item.sourceSummary || resource.description || resource.text.slice(0, 260)),
+    sourceSummary: sanitizeModeledText(String(item.sourceSummary || resource.description || resource.text.slice(0, 260))).slice(0, 320),
     wentixAngle: String(item.wentixAngle || "Convertir esta tendencia en una accion concreta para creadores, negocios y automatizaciones."),
     learningGoals: Array.isArray(item.learningGoals) && item.learningGoals.length
       ? item.learningGoals.slice(0, 5).map(String)
       : buildLearningGoals(resource),
     contentSections: Array.isArray(item.contentSections) && item.contentSections.length
       ? item.contentSections.slice(0, 8).map((section: any, index) => ({
-          heading: String(section.heading || `Bloque ${index + 1}`).slice(0, 90),
-          body: String(section.body || "").slice(0, 1200)
+          heading: sanitizeModeledText(String(section.heading || `Bloque ${index + 1}`)).slice(0, 90),
+          body: sanitizeModeledText(String(section.body || "")).slice(0, 1200)
         })).filter((section) => section.body.trim().length > 0)
       : fallbackSections,
     actionSteps: Array.isArray(item.actionSteps) && item.actionSteps.length
       ? item.actionSteps.slice(0, 6).map(String)
       : buildActionSteps(resource),
-    closingNote: String(item.closingNote || "La meta no es memorizar la fuente: es convertirla en un sistema aplicable dentro de Wentix.")
+    closingNote: sanitizeModeledText(String(item.closingNote || "La meta no es memorizar la fuente: es convertirla en un sistema aplicable dentro de Wentix.")),
+    resourceLinks: Array.isArray((item as any).resourceLinks) && (item as any).resourceLinks.length
+      ? (item as any).resourceLinks.slice(0, 4)
+      : resource.resourceLinks?.slice(0, 4)
   };
 }
 
@@ -1071,7 +1136,7 @@ function buildFallbackNewsArticle(resource: ExtractedResource): ModeledNewsArtic
       ? `Lo importante: ${resource.description}`
       : "Nueva fuente analizada para detectar oportunidades aplicables a productos, contenido y automatizaciones con IA.",
     tags: resource.sourceType === "github_repo" ? ["GitHub", "Open Source", "IA"] : ["IA", "Tendencia", "Automatizacion"],
-    sourceSummary: resource.text.slice(0, 280),
+    sourceSummary: sanitizeModeledText(resource.text.slice(0, 280)),
     wentixAngle: "No publicamos la fuente como copia: la convertimos en insight accionable para la comunidad Wentix."
   }, resource);
 }
