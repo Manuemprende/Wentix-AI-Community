@@ -188,6 +188,8 @@ interface RadarStatus {
   aiModel?: string;
   aiConfigured?: boolean;
   aiMaxModeledPerRun?: number;
+  cleanupOldFirst?: boolean;
+  cleanupOldLimit?: number;
 }
 
 interface ExtractedPromptCard {
@@ -391,6 +393,29 @@ function needsArticleRemodel(article: PersistedRadarArticle, nextArticle?: Model
   const missingUsefulLinks = !article.resourceLinks?.length && Boolean(nextArticle?.resourceLinks?.length);
 
   return hasScrapeNoise || missingStructure || missingUsefulLinks;
+}
+
+function buildResourceFromPersistedArticle(article: PersistedRadarArticle): ExtractedResource {
+  const text = sanitizeModeledText([
+    article.title,
+    article.excerpt,
+    article.sourceSummary,
+    article.wentixAngle,
+    ...(article.learningGoals || []),
+    ...(article.actionSteps || []),
+    ...(article.contentSections || []).flatMap((section) => [section.heading, section.body])
+  ].join("\n")).slice(0, 4200);
+
+  return {
+    url: article.sourceUrl,
+    normalizedUrl: article.sourceUrl,
+    sourcePlatform: "RadarCleanup",
+    sourceType: article.sourceType || "web_page",
+    title: article.sourceTitle || article.title,
+    description: article.excerpt || article.sourceSummary || "",
+    text,
+    resourceLinks: article.resourceLinks
+  };
 }
 
 function isPersistedPromptItem(value: unknown): value is PersistedPromptItem {
@@ -1280,6 +1305,9 @@ async function startServer() {
   const GROQ_MAX_TOKENS = intEnv("GROQ_MAX_TOKENS", 1800);
   const AI_MAX_MODELED_ARTICLES_PER_RUN = intEnv("AI_MAX_MODELED_ARTICLES_PER_RUN", AI_PROVIDER === "groq" ? 40 : 120);
   const AI_MAX_MODELED_PROMPTS_PER_RUN = intEnv("AI_MAX_MODELED_PROMPTS_PER_RUN", AI_PROVIDER === "groq" ? 80 : 300);
+  const RADAR_CLEANUP_OLD_FIRST = boolEnv("RADAR_CLEANUP_OLD_FIRST", true);
+  const RADAR_CLEANUP_OLD_LIMIT = intEnv("RADAR_CLEANUP_OLD_LIMIT", AI_PROVIDER === "groq" ? 2 : 10);
+  const AI_MODEL_DELAY_MS = intEnv("AI_MODEL_DELAY_MS", AI_PROVIDER === "groq" ? 65000 : 0);
   const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
   const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2";
 
@@ -1387,6 +1415,10 @@ async function startServer() {
   async function aiAvailable(): Promise<boolean> {
     if (AI_PROVIDER === "groq") return groqAvailable();
     return ollamaAvailable();
+  }
+
+  function waitForAiBudget() {
+    return AI_MODEL_DELAY_MS > 0 ? new Promise((resolve) => setTimeout(resolve, AI_MODEL_DELAY_MS)) : Promise.resolve();
   }
 
   // 1. API: Chat with ORBI
@@ -1721,6 +1753,73 @@ Responde UNICAMENTE este JSON:
     }
   }
 
+  async function cleanupOldRadarArticlesFirst(startedAt: string): Promise<RadarRunSummary | null> {
+    if (!RADAR_CLEANUP_OLD_FIRST) return null;
+
+    const existingArticles = readRadarArticles();
+    const dirtyIndexes = existingArticles
+      .map((article, index) => ({ article, index }))
+      .filter(({ article }) => needsArticleRemodel(article))
+      .slice(0, RADAR_CLEANUP_OLD_LIMIT);
+
+    if (!dirtyIndexes.length) return null;
+
+    const aiUp = await aiAvailable();
+    const failures: { url: string; error: string }[] = [];
+    const cleanedArticles: PersistedRadarArticle[] = [];
+    let processedCount = 0;
+
+    for (const { article, index } of dirtyIndexes) {
+      try {
+        processedCount += 1;
+        const resource = buildResourceFromPersistedArticle(article);
+        const modeled = await modelNewsResource(resource, "Remodelar articulo viejo de Wentix: limpiar scraping crudo, ordenar como clase profesional y conservar solo links utiles.", aiUp);
+
+        existingArticles[index] = {
+          ...article,
+          ...modeled.article,
+          id: article.id,
+          createdAt: article.createdAt,
+          source: modeled.source,
+          sourceType: article.sourceType,
+          sourceTitle: article.sourceTitle
+        };
+        cleanedArticles.push(existingArticles[index]);
+
+        if (processedCount < dirtyIndexes.length) {
+          await waitForAiBudget();
+        }
+      } catch (err: any) {
+        failures.push({
+          url: article.sourceUrl,
+          error: err.message || String(err)
+        });
+        break;
+      }
+    }
+
+    if (cleanedArticles.length) {
+      writeRadarArticles(existingArticles);
+    }
+
+    const summary: RadarRunSummary = {
+      success: true,
+      running: false,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      sourceCount: dirtyIndexes.length,
+      processedCount,
+      insertedCount: 0,
+      duplicateCount: 0,
+      failureCount: failures.length,
+      articles: cleanedArticles,
+      failures
+    };
+    radarLastRun = summary;
+    radarLastFinishedAt = summary.finishedAt;
+    return summary;
+  }
+
   let radarRunInProgress = false;
   let radarStartedAt: string | null = null;
   let radarLastFinishedAt: string | null = null;
@@ -1740,6 +1839,9 @@ Responde UNICAMENTE este JSON:
     let duplicateCount = 0;
 
     try {
+      const cleanupSummary = await cleanupOldRadarArticlesFirst(startedAt);
+      if (cleanupSummary) return cleanupSummary;
+
       const sourceUrls = getRadarSourceUrls(options.urls);
       const maxPages = Math.min(Math.max(Number(options.limit) || intEnv("RADAR_MAX_PAGES", 120), 1), 1200);
       const crawlEnabled = options.crawl ?? boolEnv("RADAR_CRAWL_ENABLED", true);
@@ -1834,7 +1936,9 @@ Responde UNICAMENTE este JSON:
       aiProvider: AI_PROVIDER,
       aiModel: AI_PROVIDER === "groq" ? GROQ_MODEL : OLLAMA_MODEL,
       aiConfigured: AI_PROVIDER === "groq" ? Boolean(GROQ_API_KEY) : true,
-      aiMaxModeledPerRun: AI_MAX_MODELED_ARTICLES_PER_RUN
+      aiMaxModeledPerRun: AI_MAX_MODELED_ARTICLES_PER_RUN,
+      cleanupOldFirst: RADAR_CLEANUP_OLD_FIRST,
+      cleanupOldLimit: RADAR_CLEANUP_OLD_LIMIT
     };
   }
 
