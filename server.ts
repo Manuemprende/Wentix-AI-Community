@@ -184,6 +184,10 @@ interface RadarStatus {
   lastFinishedAt: string | null;
   lastRun: RadarRunSummary | null;
   persistedCount: number;
+  aiProvider?: string;
+  aiModel?: string;
+  aiConfigured?: boolean;
+  aiMaxModeledPerRun?: number;
 }
 
 interface ExtractedPromptCard {
@@ -228,6 +232,10 @@ interface PromptRadarStatus {
   lastFinishedAt: string | null;
   lastRun: PromptRadarRunSummary | null;
   persistedCount: number;
+  aiProvider?: string;
+  aiModel?: string;
+  aiConfigured?: boolean;
+  aiMaxModeledPerRun?: number;
 }
 
 interface LeadItem {
@@ -1264,7 +1272,14 @@ async function startServer() {
     });
   });
 
-  // Ollama configuration (local LLM on VPS)
+  // AI provider configuration. Groq avoids local VPS CPU load; Ollama remains optional.
+  const AI_PROVIDER = (process.env.AI_PROVIDER || "ollama").toLowerCase();
+  const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+  const GROQ_BASE_URL = process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1";
+  const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+  const GROQ_MAX_TOKENS = intEnv("GROQ_MAX_TOKENS", 1800);
+  const AI_MAX_MODELED_ARTICLES_PER_RUN = intEnv("AI_MAX_MODELED_ARTICLES_PER_RUN", AI_PROVIDER === "groq" ? 40 : 120);
+  const AI_MAX_MODELED_PROMPTS_PER_RUN = intEnv("AI_MAX_MODELED_PROMPTS_PER_RUN", AI_PROVIDER === "groq" ? 80 : 300);
   const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
   const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2";
 
@@ -1317,6 +1332,63 @@ async function startServer() {
     }
   }
 
+  async function groqChat(systemInstruction: string, userPrompt: string, temperature = 0.6): Promise<string> {
+    if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY is not configured");
+
+    const response = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: systemInstruction },
+          { role: "user", content: userPrompt }
+        ],
+        temperature,
+        max_tokens: GROQ_MAX_TOKENS
+      })
+    });
+
+    if (!response.ok) {
+      const details = await response.text().catch(() => "");
+      throw new Error(`Groq chat failed: ${response.status} ${response.statusText} ${details}`.trim());
+    }
+
+    const data = await response.json() as any;
+    return data.choices?.[0]?.message?.content || "";
+  }
+
+  async function groqAvailable(): Promise<boolean> {
+    if (!GROQ_API_KEY) return false;
+    try {
+      const response = await fetch(`${GROQ_BASE_URL}/models`, {
+        headers: { "Authorization": `Bearer ${GROQ_API_KEY}` },
+        signal: AbortSignal.timeout(5000)
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function aiChat(systemInstruction: string, userPrompt: string, temperature = 0.75): Promise<string> {
+    if (AI_PROVIDER === "groq") return groqChat(systemInstruction, userPrompt, temperature);
+    return ollamaChat(systemInstruction, userPrompt, temperature);
+  }
+
+  async function aiGenerate(systemInstruction: string, prompt: string, temperature = 0.6): Promise<string> {
+    if (AI_PROVIDER === "groq") return groqChat(systemInstruction, prompt, temperature);
+    return ollamaGenerate(systemInstruction, prompt, temperature);
+  }
+
+  async function aiAvailable(): Promise<boolean> {
+    if (AI_PROVIDER === "groq") return groqAvailable();
+    return ollamaAvailable();
+  }
+
   // 1. API: Chat with ORBI
   app.post("/api/gemini/orbi-chat", async (req, res) => {
     const { messages, userContext } = req.body;
@@ -1325,7 +1397,7 @@ async function startServer() {
     }
 
     try {
-      const ollamaUp = await ollamaAvailable();
+      const aiUp = await aiAvailable();
 
       const systemInstruction = `Eres ORBI, el asistente oficial de Wentix AI.
 
@@ -1472,7 +1544,7 @@ Si el usuario pregunta sobre productos, precios, o servicios, usa la informaci?n
 
       const prompt = `Contexto del ecosistema actual: ${JSON.stringify(userContext || {})}\n\nPregunta o mensaje del usuario:\n${messages[messages.length - 1]?.content}`;
 
-      if (!ollamaUp) {
+      if (!aiUp) {
         // Fallback simulation when Ollama is not running
         setTimeout(() => {
           res.json({
@@ -1482,13 +1554,13 @@ Si el usuario pregunta sobre productos, precios, o servicios, usa la informaci?n
         return;
       }
 
-      const responseText = await ollamaChat(systemInstruction, prompt, 0.75);
+      const responseText = await aiChat(systemInstruction, prompt, 0.75);
 
       res.json({ text: responseText });
     } catch (error: any) {
-      console.error("Error calling Ollama API for ORBI:", error);
+      console.error("Error calling AI provider API for ORBI:", error);
       res.status(500).json({ 
-        error: "Failed to generate response from Ollama AI",
+        error: "Failed to generate response from AI provider",
         details: error.message || error 
       });
     }
@@ -1502,7 +1574,7 @@ Si el usuario pregunta sobre productos, precios, o servicios, usa la informaci?n
     }
 
     try {
-      const ollamaUp = await ollamaAvailable();
+      const aiUp = await aiAvailable();
       const resource = await extractWebResource(url, sourcePlatform);
       console.log(`Extraccion real lista para ${resource.normalizedUrl}. Tipo: ${resource.sourceType}. Caracteres: ${resource.text.length}`);
 
@@ -1547,7 +1619,7 @@ Responde UNICAMENTE con un objeto JSON valido con estos campos:
 
 No uses markdown. No agregues texto fuera del JSON.`;
 
-      if (!ollamaUp) {
+      if (!aiUp) {
         const fallback = buildFallbackModeledItem(resource);
         res.json({
           success: true,
@@ -1558,21 +1630,21 @@ No uses markdown. No agregues texto fuera del JSON.`;
         return;
       }
 
-      const responseText = await ollamaGenerate(systemInstruction, promptTemplate, 0.6);
+      const responseText = await aiGenerate(systemInstruction, promptTemplate, 0.6);
       let jsonOutput: ModeledCatalogItem;
       try {
         // Safe cleaning in case LLM outputs markdown fences
         const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
         jsonOutput = normalizeModeledItem(JSON.parse(cleanedText), resource);
       } catch (parseError) {
-        console.warn("No se pudo parsear JSON directo de Ollama; usando fallback modelado. Raw:", responseText);
+        console.warn("No se pudo parsear JSON directo de AI provider; usando fallback modelado. Raw:", responseText);
         jsonOutput = buildFallbackModeledItem(resource);
       }
 
       res.json({
         success: true,
         processedItem: jsonOutput,
-        source: resource.sourceType === "github_repo" ? "GitHub Extractor + Ollama Modelado" : "HTML Scraper + Ollama Modelado",
+        source: resource.sourceType === "github_repo" ? "GitHub Extractor + AI Modelado" : "HTML Scraper + AI Modelado",
         extracted: resource
       });
     } catch (err: any) {
@@ -1581,8 +1653,8 @@ No uses markdown. No agregues texto fuera del JSON.`;
     }
   });
 
-  async function modelNewsResource(resource: ExtractedResource, angle?: string, ollamaUpOverride?: boolean) {
-    const ollamaUp = typeof ollamaUpOverride === "boolean" ? ollamaUpOverride : await ollamaAvailable();
+  async function modelNewsResource(resource: ExtractedResource, angle?: string, aiUpOverride?: boolean) {
+    const aiUp = typeof aiUpOverride === "boolean" ? aiUpOverride : await aiAvailable();
 
     const systemInstruction = `Eres Wentix Radar, editor estrategico de tendencias IA.
 Tu trabajo es convertir una fuente externa en un articulo corto para la home de Wentix AI.
@@ -1626,22 +1698,22 @@ Responde UNICAMENTE este JSON:
   "closingNote": "cierre accionable para el alumno"
 }`;
 
-    if (!ollamaUp) {
+    if (!aiUp) {
       return {
         article: buildFallbackNewsArticle(resource),
         source: "Extractor + Modelado Fallback"
       };
     }
 
-    const responseText = await ollamaGenerate(systemInstruction, promptTemplate, 0.55);
+    const responseText = await aiGenerate(systemInstruction, promptTemplate, 0.55);
     try {
       const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
       return {
         article: normalizeNewsArticle(JSON.parse(cleanedText), resource),
-        source: "Extractor + Ollama News Model"
+        source: "Extractor + AI News Model"
       };
     } catch (parseError) {
-      console.warn("No se pudo parsear noticia modelada por Ollama; usando fallback. Raw:", responseText);
+      console.warn("No se pudo parsear noticia modelada por AI provider; usando fallback. Raw:", responseText);
       return {
         article: buildFallbackNewsArticle(resource),
         source: "Extractor + Modelado Fallback"
@@ -1676,12 +1748,15 @@ Responde UNICAMENTE este JSON:
       const existingArticles = readRadarArticles();
       const existingSourceUrls = new Set(existingArticles.map((article) => normalizeDedupeText(article.sourceUrl)));
       let updatedExistingCount = 0;
-      const ollamaUp = await ollamaAvailable();
+      const aiUp = await aiAvailable();
+      let aiModeledCount = 0;
 
       for (const sourceUrl of cappedUrls) {
         try {
           const resource = await extractWebResource(sourceUrl, "RadarAgent");
-          const modeled = await modelNewsResource(resource, options.angle, ollamaUp);
+          const canUseAiForThisArticle = aiUp && aiModeledCount < AI_MAX_MODELED_ARTICLES_PER_RUN;
+          const modeled = await modelNewsResource(resource, options.angle, canUseAiForThisArticle);
+          if (canUseAiForThisArticle) aiModeledCount += 1;
           const article = modeled.article;
           const sourceKey = normalizeDedupeText(article.sourceUrl);
 
@@ -1755,7 +1830,11 @@ Responde UNICAMENTE este JSON:
       startedAt: radarStartedAt,
       lastFinishedAt: radarLastFinishedAt,
       lastRun: radarLastRun,
-      persistedCount: readRadarArticles().length
+      persistedCount: readRadarArticles().length,
+      aiProvider: AI_PROVIDER,
+      aiModel: AI_PROVIDER === "groq" ? GROQ_MODEL : OLLAMA_MODEL,
+      aiConfigured: AI_PROVIDER === "groq" ? Boolean(GROQ_API_KEY) : true,
+      aiMaxModeledPerRun: AI_MAX_MODELED_ARTICLES_PER_RUN
     };
   }
 
@@ -1773,10 +1852,10 @@ Responde UNICAMENTE este JSON:
     return true;
   }
 
-  async function modelPromptCard(card: ExtractedPromptCard, ollamaUpOverride?: boolean): Promise<PersistedPromptItem> {
-    const ollamaUp = typeof ollamaUpOverride === "boolean" ? ollamaUpOverride : await ollamaAvailable();
+  async function modelPromptCard(card: ExtractedPromptCard, aiUpOverride?: boolean): Promise<PersistedPromptItem> {
+    const aiUp = typeof aiUpOverride === "boolean" ? aiUpOverride : await aiAvailable();
 
-    if (!ollamaUp) {
+    if (!aiUp) {
       return buildFallbackPromptItem(card);
     }
 
@@ -1808,12 +1887,12 @@ Responde UNICAMENTE JSON:
   "popularCount": 1200
 }`;
 
-    const responseText = await ollamaGenerate(systemInstruction, promptTemplate, 0.45);
+    const responseText = await aiGenerate(systemInstruction, promptTemplate, 0.45);
     try {
       const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
       return normalizeModeledPrompt(JSON.parse(cleanedText), card);
     } catch (err) {
-      console.warn("No se pudo parsear prompt modelado por Ollama; usando fallback. Raw:", responseText);
+      console.warn("No se pudo parsear prompt modelado por AI provider; usando fallback. Raw:", responseText);
       return buildFallbackPromptItem(card);
     }
   }
@@ -1880,7 +1959,8 @@ Responde UNICAMENTE JSON:
       const existingPrompts = readRadarPrompts();
       const existingSourceUrls = new Set(existingPrompts.map((prompt) => normalizeDedupeText(prompt.sourceUrl)));
       const existingPromptTexts = new Set(existingPrompts.map((prompt) => normalizeDedupeText(prompt.promptText.slice(0, 260))));
-      const ollamaUp = await ollamaAvailable();
+      const aiUp = await aiAvailable();
+      let aiModeledCount = 0;
 
       for (const card of cards) {
         try {
@@ -1893,7 +1973,9 @@ Responde UNICAMENTE JSON:
             continue;
           }
 
-          const modeled = await modelPromptCard(card, ollamaUp);
+          const canUseAiForThisPrompt = aiUp && aiModeledCount < AI_MAX_MODELED_PROMPTS_PER_RUN;
+          const modeled = await modelPromptCard(card, canUseAiForThisPrompt);
+          if (canUseAiForThisPrompt) aiModeledCount += 1;
           existingSourceUrls.add(sourceKey);
           existingPromptTexts.add(promptKey);
           insertedPrompts.push(modeled);
@@ -1936,7 +2018,11 @@ Responde UNICAMENTE JSON:
       startedAt: promptRadarStartedAt,
       lastFinishedAt: promptRadarLastFinishedAt,
       lastRun: promptRadarLastRun,
-      persistedCount: readRadarPrompts().length
+      persistedCount: readRadarPrompts().length,
+      aiProvider: AI_PROVIDER,
+      aiModel: AI_PROVIDER === "groq" ? GROQ_MODEL : OLLAMA_MODEL,
+      aiConfigured: AI_PROVIDER === "groq" ? Boolean(GROQ_API_KEY) : true,
+      aiMaxModeledPerRun: AI_MAX_MODELED_PROMPTS_PER_RUN
     };
   }
 
@@ -1985,14 +2071,14 @@ Responde UNICAMENTE JSON:
     }
 
     const cappedUrls = sourceUrls.slice(0, Math.min(Number(limit) || 5, 8));
-    const ollamaUp = await ollamaAvailable();
+    const aiUp = await aiAvailable();
     const results = [];
     const failures = [];
 
     for (const sourceUrl of cappedUrls) {
       try {
         const resource = await extractWebResource(sourceUrl, "Radar Batch IA");
-        const modeled = await modelNewsResource(resource, angle, ollamaUp);
+        const modeled = await modelNewsResource(resource, angle, aiUp);
         results.push({
           article: modeled.article,
           source: modeled.source,

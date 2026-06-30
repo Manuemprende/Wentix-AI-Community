@@ -37,6 +37,15 @@ Configurar en `.env` local y en `/var/www/wentix-ai/.env` del VPS:
 ```bash
 NODE_ENV=production
 PORT=3002
+AI_PROVIDER=groq
+GROQ_API_KEY= # configurar solo en el VPS, no commitear
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+GROQ_MODEL=llama-3.1-8b-instant
+GROQ_MAX_TOKENS=1800
+AI_MAX_MODELED_ARTICLES_PER_RUN=40
+AI_MAX_MODELED_PROMPTS_PER_RUN=80
+
+# Fallback opcional si se quiere volver a local
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2
 APP_URL=https://community.wentixai.pro
