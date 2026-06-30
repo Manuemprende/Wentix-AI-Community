@@ -378,6 +378,10 @@ function writeRadarArticles(articles: PersistedRadarArticle[]) {
   fs.writeFileSync(RADAR_ARTICLES_PATH, JSON.stringify(articles, null, 2), "utf-8");
 }
 
+function hasRadarScrapeNoise(value: string): boolean {
+  return /Titulo detectado|Descripcion detectada|Dominio:\s|Contenido visible|\b0[1-9]\s+[A-ZÁÉÍÓÚÑ][^.!?]{2,42}\s+0[1-9]|Lo importante:\s*Lo importante|Radar Wentix:[\s\S]{0,500}Radar Wentix:|Futurepedia is committed|select a listing type below|Home AI Tools Newsletter|Login Join For Free|\bor\s+\./i.test(value);
+}
+
 function needsArticleRemodel(article: PersistedRadarArticle, nextArticle?: ModeledNewsArticle): boolean {
   const contentBlob = [
     article.excerpt,
@@ -388,7 +392,7 @@ function needsArticleRemodel(article: PersistedRadarArticle, nextArticle?: Model
     ...(article.contentSections || []).flatMap((section) => [section.heading, section.body])
   ].join(" ");
 
-  const hasScrapeNoise = /Titulo detectado|Descripcion detectada|Dominio:\s|Contenido visible|\b0[1-9]\s+[A-ZÁÉÍÓÚÑ][^.!?]{2,42}\s+0[1-9]/i.test(contentBlob);
+  const hasScrapeNoise = hasRadarScrapeNoise(contentBlob);
   const missingStructure = !article.contentSections?.length || !article.learningGoals?.length;
   const missingUsefulLinks = !article.resourceLinks?.length && Boolean(nextArticle?.resourceLinks?.length);
 
@@ -1204,7 +1208,7 @@ function hasArticleScrapeNoise(article: ModeledNewsArticle): boolean {
     ...article.contentSections.flatMap((section) => [section.heading, section.body])
   ].join(" ");
 
-  return /Titulo detectado|Descripcion detectada|Dominio:\s|Contenido visible|\b0[1-9]\s+[A-ZÁÉÍÓÚÑ][^.!?]{2,42}\s+0[1-9]/i.test(blob);
+  return hasRadarScrapeNoise(blob);
 }
 
 function cleanNewsArticleText(value: string, fallback = ""): string {
