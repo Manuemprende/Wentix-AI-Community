@@ -10,16 +10,15 @@ const RADAR_PROMPTS_PATH = path.join(process.cwd(), "radar_prompts.json");
 const MAX_PERSISTED_RADAR_ARTICLES = 1000;
 const MAX_PERSISTED_RADAR_PROMPTS = 1000;
 const DEFAULT_RADAR_SOURCE_URLS = [
-  "https://www.tododeia.com/",
-  "https://www.tododeia.com/tienda/claude-de-cero-a-cien",
-  "https://www.tododeia.com/tienda/codex-de-cero-a-cien",
-  "https://www.tododeia.com/collab"
+  "https://www.anthropic.com/news",
+  "https://blog.google/technology/ai/",
+  "https://github.blog/ai-and-ml/",
+  "https://huggingface.co/blog"
 ];
 const DEFAULT_RADAR_TOOL_SOURCE_URLS = [
-  "https://www.futurepedia.io/",
-  "https://theresanaiforthat.com/",
-  "https://aitoptools.com/",
-  "https://bestofai.io/"
+  "https://replicate.com/blog",
+  "https://www.deepmind.com/blog",
+  "https://www.microsoft.com/en-us/ai/blog/"
 ];
 const DEFAULT_PROMPT_SOURCE_URLS = [
   "https://prompts.chat/prompts",

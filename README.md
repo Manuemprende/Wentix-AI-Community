@@ -60,8 +60,8 @@ RADAR_AUTO_RUN=true
 RADAR_INTERVAL_MINUTES=60
 RADAR_CRAWL_ENABLED=true
 RADAR_MAX_PAGES=800
-RADAR_SOURCE_URLS=https://www.tododeia.com/,https://www.tododeia.com/tienda/claude-de-cero-a-cien,https://www.tododeia.com/tienda/codex-de-cero-a-cien,https://www.tododeia.com/collab
-RADAR_TOOL_SOURCE_URLS=https://www.futurepedia.io/,https://theresanaiforthat.com/,https://aitoptools.com/,https://bestofai.io/
+RADAR_SOURCE_URLS=https://www.anthropic.com/news,https://blog.google/technology/ai/,https://github.blog/ai-and-ml/,https://huggingface.co/blog
+RADAR_TOOL_SOURCE_URLS=https://replicate.com/blog,https://www.deepmind.com/blog,https://www.microsoft.com/en-us/ai/blog/
 
 PROMPT_RADAR_AUTO_RUN=true
 PROMPT_RADAR_INTERVAL_MINUTES=120
