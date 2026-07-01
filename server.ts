@@ -1916,7 +1916,7 @@ Responde UNICAMENTE este JSON:
         };
         cleanedArticles.push(existingArticles[index]);
 
-        if (processedCount < dirtyIndexes.length) {
+        if (RADAR_CLEANUP_AI_ENABLED && processedCount < dirtyIndexes.length) {
           await waitForAiBudget();
         }
       } catch (err: any) {
