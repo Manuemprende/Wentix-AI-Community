@@ -59,7 +59,7 @@ APP_URL=https://community.wentixai.pro
 RADAR_AUTO_RUN=true
 RADAR_INTERVAL_MINUTES=60
 RADAR_CRAWL_ENABLED=true
-RADAR_MAX_PAGES=800
+RADAR_MAX_PAGES=40
 RADAR_SOURCE_URLS=https://www.anthropic.com/news,https://blog.google/technology/ai/,https://github.blog/ai-and-ml/,https://huggingface.co/blog
 RADAR_TOOL_SOURCE_URLS=https://replicate.com/blog,https://www.deepmind.com/blog,https://www.microsoft.com/en-us/ai/blog/
 
