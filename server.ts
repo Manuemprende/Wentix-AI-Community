@@ -534,11 +534,34 @@ function sanitizeModeledText(value: string): string {
     .replace(/Descripcion detectada:\s*/gi, "")
     .replace(/Dominio:\s*\S+\s*/gi, "")
     .replace(/Contenido visible:\s*/gi, "")
+    .replace(/(?:Lo importante:\s*){2,}/gi, "")
+    .replace(/\bLo importante:\s*/gi, "")
     .replace(/\b(?:Titulo detectado|Descripcion detectada|Dominio|Contenido visible)\b[:：]?/gi, "")
     .replace(/\b(?:0[1-9]|1[0-9])\s+([A-ZÁÉÍÓÚÑ][^.!?]{2,42})(?=\s+(?:0[1-9]|1[0-9])\s+|$)/g, " ")
     .replace(/\b(?:0[1-9]|1[0-9])\s+(?=[A-ZÁÉÍÓÚÑ])/g, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function parseAiJsonObject<T>(responseText: string): T {
+  const cleanedText = String(responseText || "")
+    .replace(/```json/gi, "```")
+    .replace(/```JSON/g, "```")
+    .trim();
+
+  const fencedMatch = cleanedText.match(/```\s*([\s\S]*?)\s*```/);
+  const candidate = fencedMatch?.[1]?.trim() || cleanedText;
+
+  try {
+    return JSON.parse(candidate) as T;
+  } catch {
+    const firstBrace = candidate.indexOf("{");
+    const lastBrace = candidate.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      return JSON.parse(candidate.slice(firstBrace, lastBrace + 1)) as T;
+    }
+    throw new Error("AI_JSON_PARSE_FAILED");
+  }
 }
 
 function extractUsefulResourceLinks(html: string, baseUrl: string): ResourceLink[] {
@@ -1768,9 +1791,7 @@ No uses markdown. No agregues texto fuera del JSON.`;
       const responseText = await aiGenerate(systemInstruction, promptTemplate, 0.6);
       let jsonOutput: ModeledCatalogItem;
       try {
-        // Safe cleaning in case LLM outputs markdown fences
-        const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-        jsonOutput = normalizeModeledItem(JSON.parse(cleanedText), resource);
+        jsonOutput = normalizeModeledItem(parseAiJsonObject<Partial<ModeledCatalogItem>>(responseText), resource);
       } catch (parseError) {
         console.warn("No se pudo parsear JSON directo de AI provider; usando fallback modelado. Raw:", responseText);
         jsonOutput = buildFallbackModeledItem(resource);
@@ -1842,9 +1863,8 @@ Responde UNICAMENTE este JSON:
 
     const responseText = await aiGenerate(systemInstruction, promptTemplate, 0.55);
     try {
-      const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
       return {
-        article: hardenNewsArticleForPublish(normalizeNewsArticle(JSON.parse(cleanedText), resource), resource),
+        article: hardenNewsArticleForPublish(normalizeNewsArticle(parseAiJsonObject<Partial<ModeledNewsArticle>>(responseText), resource), resource),
         source: "Extractor + AI News Model"
       };
     } catch (parseError) {
@@ -2096,8 +2116,7 @@ Responde UNICAMENTE JSON:
 
     const responseText = await aiGenerate(systemInstruction, promptTemplate, 0.45);
     try {
-      const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-      return normalizeModeledPrompt(JSON.parse(cleanedText), card);
+      return normalizeModeledPrompt(parseAiJsonObject<Partial<PersistedPromptItem>>(responseText), card);
     } catch (err) {
       console.warn("No se pudo parsear prompt modelado por AI provider; usando fallback. Raw:", responseText);
       return buildFallbackPromptItem(card);
