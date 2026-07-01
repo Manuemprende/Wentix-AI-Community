@@ -190,6 +190,7 @@ interface RadarStatus {
   aiMaxModeledPerRun?: number;
   cleanupOldFirst?: boolean;
   cleanupOldLimit?: number;
+  cleanupAiEnabled?: boolean;
 }
 
 interface ExtractedPromptCard {
@@ -1432,7 +1433,8 @@ async function startServer() {
   const AI_MAX_MODELED_ARTICLES_PER_RUN = intEnv("AI_MAX_MODELED_ARTICLES_PER_RUN", AI_PROVIDER === "groq" ? 40 : 120);
   const AI_MAX_MODELED_PROMPTS_PER_RUN = intEnv("AI_MAX_MODELED_PROMPTS_PER_RUN", AI_PROVIDER === "groq" ? 80 : 300);
   const RADAR_CLEANUP_OLD_FIRST = boolEnv("RADAR_CLEANUP_OLD_FIRST", true);
-  const RADAR_CLEANUP_OLD_LIMIT = intEnv("RADAR_CLEANUP_OLD_LIMIT", AI_PROVIDER === "groq" ? 2 : 10);
+  const RADAR_CLEANUP_AI_ENABLED = boolEnv("RADAR_CLEANUP_AI_ENABLED", AI_PROVIDER !== "groq");
+  const RADAR_CLEANUP_OLD_LIMIT = intEnv("RADAR_CLEANUP_OLD_LIMIT", AI_PROVIDER === "groq" && !RADAR_CLEANUP_AI_ENABLED ? 50 : AI_PROVIDER === "groq" ? 2 : 10);
   const AI_MODEL_DELAY_MS = intEnv("AI_MODEL_DELAY_MS", AI_PROVIDER === "groq" ? 65000 : 0);
   const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
   const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2";
@@ -1893,10 +1895,15 @@ Responde UNICAMENTE este JSON:
     let processedCount = 0;
 
     for (const { article, index } of dirtyIndexes) {
+      const resource = buildResourceFromPersistedArticle(article);
       try {
         processedCount += 1;
-        const resource = buildResourceFromPersistedArticle(article);
-        const modeled = await modelNewsResource(resource, "Remodelar articulo viejo de Wentix: limpiar scraping crudo, ordenar como clase profesional y conservar solo links utiles.", aiUp);
+        const modeled = RADAR_CLEANUP_AI_ENABLED
+          ? await modelNewsResource(resource, "Remodelar articulo viejo de Wentix: limpiar scraping crudo, ordenar como clase profesional y conservar solo links utiles.", aiUp)
+          : {
+              article: hardenNewsArticleForPublish(buildFallbackNewsArticle(resource), resource),
+              source: "Extractor + Limpieza Local"
+            };
 
         existingArticles[index] = {
           ...article,
@@ -1917,7 +1924,17 @@ Responde UNICAMENTE este JSON:
           url: article.sourceUrl,
           error: err.message || String(err)
         });
-        break;
+        const fallbackArticle = hardenNewsArticleForPublish(buildFallbackNewsArticle(resource), resource);
+        existingArticles[index] = {
+          ...article,
+          ...fallbackArticle,
+          id: article.id,
+          createdAt: article.createdAt,
+          source: "Extractor + Limpieza Local",
+          sourceType: article.sourceType,
+          sourceTitle: article.sourceTitle
+        };
+        cleanedArticles.push(existingArticles[index]);
       }
     }
 
@@ -2061,7 +2078,8 @@ Responde UNICAMENTE este JSON:
       aiConfigured: AI_PROVIDER === "groq" ? Boolean(GROQ_API_KEY) : true,
       aiMaxModeledPerRun: AI_MAX_MODELED_ARTICLES_PER_RUN,
       cleanupOldFirst: RADAR_CLEANUP_OLD_FIRST,
-      cleanupOldLimit: RADAR_CLEANUP_OLD_LIMIT
+      cleanupOldLimit: RADAR_CLEANUP_OLD_LIMIT,
+      cleanupAiEnabled: RADAR_CLEANUP_AI_ENABLED
     };
   }
 
