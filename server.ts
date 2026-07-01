@@ -1863,14 +1863,14 @@ Responde UNICAMENTE este JSON:
       };
     }
 
-    const responseText = await aiGenerate(systemInstruction, promptTemplate, 0.55);
     try {
+      const responseText = await aiGenerate(systemInstruction, promptTemplate, 0.55);
       return {
         article: hardenNewsArticleForPublish(normalizeNewsArticle(parseAiJsonObject<Partial<ModeledNewsArticle>>(responseText), resource), resource),
         source: "Extractor + AI News Model"
       };
     } catch (parseError) {
-      console.warn("No se pudo parsear noticia modelada por AI provider; usando fallback. Raw:", responseText);
+      console.warn("No se pudo modelar noticia por AI provider; usando fallback local.", parseError);
       return {
         article: hardenNewsArticleForPublish(buildFallbackNewsArticle(resource), resource),
         source: "Extractor + Modelado Fallback"
